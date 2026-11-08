@@ -33,7 +33,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 if (config.trustProxy) app.set('trust proxy', Number(config.trustProxy));
 app.use(express.json({ limit: '100kb' }));
-app.use(express.static(path.join(__dirname, '..', 'public')));
+// File panel sering berubah. Browser selalu memeriksa ulang supaya tidak memakai JS lama.
+app.use(express.static(path.join(__dirname, '..', 'public'), {
+  setHeaders: (res, filePath) => {
+    if (/\.(html|js|css)$/.test(filePath)) res.setHeader('Cache-Control', 'no-cache');
+  },
+}));
 
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 const now = () => new Date().toISOString();

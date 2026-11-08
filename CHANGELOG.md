@@ -2,6 +2,33 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [0.12.3]
+
+### Diperbaiki
+- Status auto refresh tidak lagi kembali ke mati setelah halaman di-refresh. Penyebabnya, `init()` dijalankan dua kali karena Alpine sudah memanggilnya otomatis dan `x-init` juga memanggilnya. Panel customer juga terkena hal yang sama, sehingga timer dan pengambilan data sempat dobel.
+- Toggle sekarang mengatur status secara eksplisit, bukan membalik status.
+
+## [0.12.2]
+
+### Diperbaiki
+- Status toggle auto refresh tidak lagi kembali mati karena browser memakai file JavaScript lama. File panel sekarang selalu diperiksa ulang oleh browser.
+
+## [0.12.1]
+
+### Diubah
+- Kartu Spesifikasi server pindah ke sub-tab Sistem.
+- Kartu Perlu perhatian pindah ke atas tab Customer, supaya bisa langsung ditindaklanjuti dengan tombol perpanjang.
+
+## [0.12.0]
+
+### Ditambahkan
+- Kartu Spesifikasi server di sub-tab Server: hostname, sistem operasi, CPU, RAM total, disk video total, versi Node.js, dan versi FFmpeg.
+
+## [0.11.1]
+
+### Diperbaiki
+- Status toggle auto refresh di dashboard admin diingat di browser. Setelah refresh, status terakhir dipertahankan. Default tetap mati.
+
 ## [0.11.0]
 
 ### Diubah

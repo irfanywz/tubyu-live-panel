@@ -65,9 +65,15 @@ function adminApp() {
       }
       this.theme = Theme.get();
       const initial = location.hash.slice(1);
+      // Ingat pilihan terakhir. Kalau belum pernah diubah, tetap mati.
+      const wasOn = localStorage.getItem('adminAutoRefresh') === '1';
       this.tab = this.resolveTab(initial);
       window.addEventListener('hashchange', () => this.go(location.hash.slice(1)));
-      await this.refreshAll();
+      if (wasOn) {
+        this.setAuto(true, false);   // menyalakan lagi tanpa menulis ulang storage
+      } else {
+        await this.refreshAll();
+      }
     },
 
     resolveTab(t) {
@@ -83,11 +89,13 @@ function adminApp() {
     },
 
     // Refresh manual dan auto refresh memperbarui data yang sama. Jaringan kini dibaca tanpa PowerShell, jadi aman diulang.
-    toggleAuto() {
-      this.autoRefresh = !this.autoRefresh;
+    // Nilai diset secara eksplisit. Tidak membalik status, jadi aman walau dipanggil ulang.
+    setAuto(on, persist = true) {
+      this.autoRefresh = on;
+      if (persist) localStorage.setItem('adminAutoRefresh', on ? '1' : '0');
       clearInterval(this.autoTimer);
       this.autoTimer = null;
-      if (this.autoRefresh) {
+      if (on) {
         this.autoTimer = setInterval(() => {
           if (!document.hidden && !this.refreshing) this.refreshAll();
         }, this.AUTO_MS);
@@ -325,6 +333,11 @@ function adminApp() {
     get bwMonthLabel() {
       return new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
     },
+    get ffmpegVersion() {
+      const c = this.system.find((x) => x.id === 'ffmpeg');
+      return c ? (c.ok ? c.detail : 'tidak terdeteksi') : '-';
+    },
+
     get netUp() { return this.rateText(this.monitor?.network?.upKbps); },
     get netDown() { return this.rateText(this.monitor?.network?.downKbps); },
 

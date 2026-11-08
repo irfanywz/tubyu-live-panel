@@ -18,11 +18,11 @@
     muted: 'rgb(var(--c-muted) / <alpha-value>)',
   } } } };
 </script>
-<link rel="stylesheet" href="/css/theme.css" />
+<link rel="stylesheet" href="/css/theme.css?v=0.12.3" />
 <script>document.documentElement.dataset.theme = localStorage.getItem('theme') || 'dark';</script>
 <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 </head>
-<body class="bg-app text-ink min-h-screen font-sans" x-data="adminApp()" x-init="init()">
+<body class="bg-app text-ink min-h-screen font-sans" x-data="adminApp()">
 
 <div x-cloak class="min-h-screen md:flex">
 
@@ -87,7 +87,7 @@
           <p class="text-xs text-muted">Terakhir diperbarui <span x-text="updatedText"></span></p>
         </div>
         <div class="flex items-center gap-3 flex-wrap">
-          <button type="button" class="flex items-center gap-2 text-sm" @click="toggleAuto()" :aria-pressed="autoRefresh">
+          <button type="button" class="flex items-center gap-2 text-sm" @click="setAuto(!autoRefresh)" :aria-pressed="autoRefresh">
             <span class="relative inline-block h-5 w-9 rounded-full transition-colors" :class="autoRefresh ? 'bg-indigo-500' : 'bg-raised border border-line'">
               <span class="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all" :class="autoRefresh ? 'left-[18px]' : 'left-0.5'"></span>
             </span>
@@ -139,6 +139,7 @@
 
       <!-- SERVER -->
       <div x-show="dashTab === 'server'" class="space-y-4">
+
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div class="card p-4">
             <div class="text-xs text-muted">Disk video</div>
@@ -172,16 +173,6 @@
           · Beban 1 menit <span x-text="monitor && monitor.load !== null ? monitor.load : 'tidak tersedia di Windows'"></span>
         </p>
 
-        <div class="card p-4">
-          <div class="font-semibold text-sm mb-2">Perlu perhatian</div>
-          <template x-for="c in expiringList" :key="c.id">
-            <div class="flex items-center justify-between gap-3 py-2 border-t border-line text-sm">
-              <span x-text="c.username"></span>
-              <span class="badge b-warn" x-text="'sisa ' + remain(c.remaining_sec)"></span>
-            </div>
-          </template>
-          <p x-show="expiringList.length === 0" class="text-sm text-muted">Tidak ada masa aktif yang hampir habis.</p>
-        </div>
       </div>
 
       <!-- LIVE -->
@@ -281,7 +272,20 @@
       </div>
 
       <!-- SISTEM -->
-      <div x-show="dashTab === 'sistem'" class="space-y-3">
+      <div x-show="dashTab === 'sistem'" class="space-y-4">
+        <div class="card p-4">
+          <div class="font-semibold text-sm mb-3">Spesifikasi server</div>
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <div class="min-w-0"><dt class="text-xs text-muted">Hostname</dt><dd class="font-mono truncate" x-text="monitor && monitor.specs ? monitor.specs.hostname : '-'"></dd></div>
+            <div class="min-w-0"><dt class="text-xs text-muted">Sistem operasi</dt><dd class="truncate" x-text="monitor && monitor.specs ? monitor.specs.osName + ' · ' + monitor.specs.arch : '-'"></dd></div>
+            <div class="min-w-0 sm:col-span-2"><dt class="text-xs text-muted">CPU</dt><dd class="truncate" x-text="monitor && monitor.specs ? monitor.specs.cpuModel + ' · ' + monitor.specs.cpuCores + ' core' : '-'"></dd></div>
+            <div class="min-w-0"><dt class="text-xs text-muted">RAM total</dt><dd x-text="monitor && monitor.specs ? bytes(monitor.specs.ramTotal) : '-'"></dd></div>
+            <div class="min-w-0"><dt class="text-xs text-muted">Disk video total</dt><dd x-text="monitor && monitor.disk ? bytes(monitor.disk.total) : '-'"></dd></div>
+            <div class="min-w-0"><dt class="text-xs text-muted">Node.js</dt><dd class="font-mono" x-text="monitor && monitor.specs ? monitor.specs.nodeVersion : '-'"></dd></div>
+            <div class="min-w-0"><dt class="text-xs text-muted">FFmpeg</dt><dd class="truncate" x-text="ffmpegVersion"></dd></div>
+          </dl>
+        </div>
+
         <div class="flex items-center justify-between">
           <div class="text-sm text-muted">Hasil pemeriksaan kesiapan sistem</div>
           <span class="badge" :class="systemOk ? 'b-ok' : 'b-bad'" x-text="systemOk ? 'Siap dipakai' : 'Ada yang perlu diperbaiki'"></span>
@@ -309,6 +313,17 @@
           <iconify-icon icon="tabler:refresh" class="ico" :class="refreshing && 'animate-spin'"></iconify-icon> Refresh
         </button>
       </div>
+
+      <div class="card p-4 max-w-2xl">
+          <div class="font-semibold text-sm mb-2">Perlu perhatian</div>
+          <template x-for="c in expiringList" :key="c.id">
+            <div class="flex items-center justify-between gap-3 py-2 border-t border-line text-sm">
+              <span x-text="c.username"></span>
+              <span class="badge b-warn" x-text="'sisa ' + remain(c.remaining_sec)"></span>
+            </div>
+          </template>
+          <p x-show="expiringList.length === 0" class="text-sm text-muted">Tidak ada masa aktif yang hampir habis.</p>
+        </div>
 
       <div class="card p-4 max-w-2xl">
         <div class="font-semibold mb-1">Tambah customer</div>
@@ -631,9 +646,9 @@
   </div>
 </div>
 
-<script src="/js/util.js"></script>
-<script src="/js/api.js"></script>
-<script src="/js/admin-app.js"></script>
+<script src="/js/util.js?v=0.12.3"></script>
+<script src="/js/api.js?v=0.12.3"></script>
+<script src="/js/admin-app.js?v=0.12.3"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </body>
 </html>

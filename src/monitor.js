@@ -15,6 +15,18 @@ const BACKGROUND_MS = 5 * 60_000;
 const CPU_WINDOW_MS = 300;
 const CMD_TIMEOUT_MS = 3000;
 
+// Spesifikasi yang tidak berubah selama server berjalan. Dibaca sekali saat modul dimuat.
+const cpuList = os.cpus();
+const SPECS = {
+  hostname: os.hostname(),
+  osName: `${os.type()} ${os.release()}`,
+  arch: os.arch(),
+  cpuModel: (cpuList[0]?.model || 'tidak diketahui').replace(/\s+/g, ' ').trim(),
+  cpuCores: cpuList.length,
+  ramTotal: os.totalmem(),
+  nodeVersion: process.version,
+};
+
 let latest = null;
 let inflight = null;
 let prevNet = null;   // { rx, tx, t } counter terakhir untuk menghitung kecepatan
@@ -159,6 +171,7 @@ async function measure() {
   const ramUsed = ramTotal - os.freemem();
   latest = {
     sampledAt: Date.now(),
+    specs: SPECS,
     cpuPct,
     cpuCores: os.cpus().length,
     ramTotal,
