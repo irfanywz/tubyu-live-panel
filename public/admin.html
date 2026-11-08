@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin · Tubyu Live Panel</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<meta name="theme-color" content="#0b0d14" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { colors: {
+    app: 'rgb(var(--c-app) / <alpha-value>)',
+    surface: 'rgb(var(--c-surface) / <alpha-value>)',
+    raised: 'rgb(var(--c-raised) / <alpha-value>)',
+    input: 'rgb(var(--c-input) / <alpha-value>)',
+    line: 'rgb(var(--c-line) / <alpha-value>)',
+    ink: 'rgb(var(--c-ink) / <alpha-value>)',
+    muted: 'rgb(var(--c-muted) / <alpha-value>)',
+  } } } };
+</script>
+<link rel="stylesheet" href="/css/theme.css" />
+<script>document.documentElement.dataset.theme = localStorage.getItem('theme') || 'dark';</script>
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+</head>
+<body class="bg-app text-ink min-h-screen font-sans" x-data="adminApp()" x-init="init()">
+
+<div x-cloak class="min-h-screen md:flex">
+
+  <!-- SIDEBAR DESKTOP -->
+  <aside class="hidden md:flex md:flex-col md:w-60 bg-surface border-r border-line p-4 md:sticky md:top-0 md:h-screen md:overflow-y-auto">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <img src="/img/logo.svg" alt="" class="h-9 w-9 shrink-0" />
+      <div class="min-w-0">
+        <div class="font-semibold leading-tight">Tubyu Live Panel</div>
+        <div class="text-xs text-muted truncate" x-text="me ? 'Admin · ' + me.username : ''"></div>
+      </div>
+    </div>
+    <nav class="mt-4 flex flex-col gap-2">
+      <button class="nav" :class="tab==='dashboard' && 'on'" @click="go('dashboard')"><iconify-icon icon="tabler:layout-dashboard" class="ico"></iconify-icon> Dashboard</button>
+      <button class="nav" :class="tab==='customer' && 'on'" @click="go('customer')"><iconify-icon icon="tabler:users" class="ico"></iconify-icon> Customer</button>
+      <button class="nav" :class="tab==='berkas' && 'on'" @click="go('berkas')"><iconify-icon icon="tabler:movie" class="ico"></iconify-icon> Berkas</button>
+      <button class="nav" :class="tab==='audit' && 'on'" @click="go('audit')"><iconify-icon icon="tabler:history" class="ico"></iconify-icon> Audit log</button>
+      <button class="nav" :class="tab==='akun' && 'on'" @click="go('akun')"><iconify-icon icon="tabler:key" class="ico"></iconify-icon> Akun &amp; sandi</button>
+    </nav>
+    <button class="btn btn-ghost w-full justify-center mt-auto" @click="toggleTheme()">
+      <iconify-icon :icon="theme === 'dark' ? 'tabler:sun' : 'tabler:moon'" class="ico"></iconify-icon>
+      <span x-text="theme === 'dark' ? 'Mode terang' : 'Mode gelap'"></span>
+    </button>
+    <button class="btn btn-ghost w-full justify-center mt-2" @click="logout()">
+      <iconify-icon icon="tabler:logout" class="ico"></iconify-icon> Logout
+    </button>
+  </aside>
+
+  <!-- HEADER MOBILE -->
+  <header class="md:hidden fixed top-0 inset-x-0 z-40 bg-surface/95 backdrop-blur border-b border-line">
+    <div class="flex items-center justify-between gap-3 px-4 h-14">
+      <div class="flex items-center gap-2 min-w-0">
+        <img src="/img/logo.svg" alt="" class="h-7 w-7 shrink-0" />
+        <div class="min-w-0">
+          <div class="font-semibold text-sm leading-tight truncate">Tubyu Live Panel</div>
+          <div class="text-[11px] text-muted truncate" x-text="me ? 'Admin · ' + me.username : ''"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button class="btn btn-sm btn-ghost" @click="toggleTheme()" aria-label="Ganti tema">
+          <iconify-icon :icon="theme === 'dark' ? 'tabler:sun' : 'tabler:moon'" class="ico"></iconify-icon>
+        </button>
+        <button class="btn btn-sm btn-ghost" @click="logout()" aria-label="Logout">
+          <iconify-icon icon="tabler:logout" class="ico"></iconify-icon>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 min-w-0 p-4 pt-20 pb-24 md:p-6 md:pt-6">
+
+    <div x-show="msg" class="mb-4 rounded-lg p-3 text-sm border"
+         :class="msgOk ? 'bg-ok-soft border-ok-line text-ok' : 'bg-err-soft border-err-line text-err'"
+         x-text="msg"></div>
+
+    <!-- ===================== DASHBOARD ===================== -->
+    <section x-show="tab==='dashboard'" class="space-y-4">
+
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 class="text-xl md:text-2xl font-semibold">Dashboard</h1>
+          <p class="text-xs text-muted">Terakhir diperbarui <span x-text="updatedText"></span></p>
+        </div>
+        <div class="flex items-center gap-3 flex-wrap">
+          <button type="button" class="flex items-center gap-2 text-sm" @click="toggleAuto()" :aria-pressed="autoRefresh">
+            <span class="relative inline-block h-5 w-9 rounded-full transition-colors" :class="autoRefresh ? 'bg-indigo-500' : 'bg-raised border border-line'">
+              <span class="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all" :class="autoRefresh ? 'left-[18px]' : 'left-0.5'"></span>
+            </span>
+            <span x-text="autoText"></span>
+          </button>
+          <button class="btn" @click="refreshAll()" :disabled="refreshing">
+            <iconify-icon icon="tabler:refresh" class="ico" :class="refreshing && 'animate-spin'"></iconify-icon>
+            <span x-text="refreshing ? 'Memperbarui...' : 'Refresh'"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Ringkasan utama, selalu terlihat -->
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div class="card p-4">
+          <div class="text-xs text-muted">CPU</div>
+          <div class="text-2xl font-bold mt-1" x-text="monitor && monitor.cpuPct !== null ? monitor.cpuPct + '%' : '-'"></div>
+          <div class="h-1.5 rounded-full bg-raised mt-2 overflow-hidden"><div class="h-1.5 bg-indigo-500 transition-all" :style="'width:' + (monitor && monitor.cpuPct ? monitor.cpuPct : 0) + '%'"></div></div>
+        </div>
+        <div class="card p-4">
+          <div class="text-xs text-muted">RAM</div>
+          <div class="text-2xl font-bold mt-1" x-text="monitor ? monitor.ramPct + '%' : '-'"></div>
+          <div class="h-1.5 rounded-full bg-raised mt-2 overflow-hidden"><div class="h-1.5 bg-indigo-500 transition-all" :style="'width:' + (monitor ? monitor.ramPct : 0) + '%'"></div></div>
+        </div>
+        <div class="card p-4">
+          <div class="text-xs text-muted">Upload live</div>
+          <div class="text-2xl font-bold mt-1 text-accent" x-text="monitor ? rateText(monitor.liveUploadKbps) : '-'"></div>
+          <div class="text-xs text-muted mt-2" x-text="monitor ? monitor.liveCount + ' live berjalan' : ''"></div>
+        </div>
+        <div class="card p-4">
+          <div class="text-xs text-muted">Live aktif</div>
+          <div class="text-2xl font-bold mt-1 text-accent" x-text="summary.live"></div>
+        </div>
+        <div class="card p-4">
+          <div class="text-xs text-muted">Terjadwal</div>
+          <div class="text-2xl font-bold mt-1 text-accent" x-text="summary.scheduled"></div>
+        </div>
+      </div>
+
+      <!-- Sub-tab -->
+      <div class="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+        <button class="chip" :class="dashTab === 'server' && 'on'" @click="dashTab = 'server'">Server</button>
+        <button class="chip" :class="dashTab === 'live' && 'on'" @click="dashTab = 'live'">
+          Live <span class="badge b-live" x-text="live.length" x-show="live.length > 0"></span>
+        </button>
+        <button class="chip" :class="dashTab === 'bandwidth' && 'on'" @click="dashTab = 'bandwidth'">Bandwidth</button>
+        <button class="chip" :class="dashTab === 'sistem' && 'on'" @click="dashTab = 'sistem'">Sistem</button>
+      </div>
+
+      <!-- SERVER -->
+      <div x-show="dashTab === 'server'" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="card p-4">
+            <div class="text-xs text-muted">Disk video</div>
+            <div class="text-xl font-bold mt-1" x-text="monitor && monitor.disk ? monitor.disk.pct + '%' : '-'"></div>
+            <div class="h-1.5 rounded-full bg-raised mt-2 overflow-hidden"><div class="h-1.5 bg-indigo-500 transition-all" :style="'width:' + (monitor && monitor.disk ? monitor.disk.pct : 0) + '%'"></div></div>
+            <div class="text-xs text-muted mt-1" x-text="monitor && monitor.disk ? bytes(monitor.disk.used) + ' / ' + bytes(monitor.disk.total) : ''"></div>
+          </div>
+          <div class="card p-4">
+            <div class="text-xs text-muted">Jaringan · upload</div>
+            <div class="text-xl font-bold mt-1" x-text="netUp"></div>
+            <div class="text-xs text-muted mt-2" x-text="monitor && monitor.network && monitor.network.upTotal !== null ? 'Total sejak nyala ' + bytes(monitor.network.upTotal) : ''"></div>
+          </div>
+          <div class="card p-4">
+            <div class="text-xs text-muted">Jaringan · download</div>
+            <div class="text-xl font-bold mt-1" x-text="netDown"></div>
+            <div class="text-xs text-muted mt-2" x-text="monitor && monitor.network && monitor.network.downTotal !== null ? 'Total sejak nyala ' + bytes(monitor.network.downTotal) : ''"></div>
+          </div>
+          <div class="card p-4">
+            <div class="text-xs text-muted">Customer</div>
+            <div class="text-xl font-bold mt-1" x-text="summary.customers"></div>
+            <div class="text-xs text-muted mt-2">
+              <span x-text="summary.expiringSoon"></span> habis dalam 3 hari
+              · <span x-text="summary.errorsToday"></span> error hari ini
+            </div>
+          </div>
+        </div>
+
+        <p class="text-xs text-muted">
+          Uptime <span x-text="uptimeText()"></span>
+          · Memori panel <span x-text="monitor ? bytes(monitor.appRss) : '-'"></span>
+          · Beban 1 menit <span x-text="monitor && monitor.load !== null ? monitor.load : 'tidak tersedia di Windows'"></span>
+        </p>
+
+        <div class="card p-4">
+          <div class="font-semibold text-sm mb-2">Perlu perhatian</div>
+          <template x-for="c in expiringList" :key="c.id">
+            <div class="flex items-center justify-between gap-3 py-2 border-t border-line text-sm">
+              <span x-text="c.username"></span>
+              <span class="badge b-warn" x-text="'sisa ' + remain(c.remaining_sec)"></span>
+            </div>
+          </template>
+          <p x-show="expiringList.length === 0" class="text-sm text-muted">Tidak ada masa aktif yang hampir habis.</p>
+        </div>
+      </div>
+
+      <!-- LIVE -->
+      <div x-show="dashTab === 'live'">
+        <div class="grid gap-3 md:hidden">
+          <template x-for="t in live" :key="t.id">
+            <div class="card p-4 text-sm">
+              <div class="font-semibold truncate" x-text="t.title"></div>
+              <div class="text-xs text-muted">Customer: <span x-text="t.owner"></span> · <span x-text="t.file_name || '-'"></span></div>
+              <div class="mt-2 text-xs" :class="t.stats && t.stats.age_sec > 15 ? 'text-warn' : 'text-ink'" x-text="liveText(t)"></div>
+              <div class="text-xs text-muted mt-1" x-show="t.remaining_sec !== null" x-text="'Sisa ' + remain(t.remaining_sec)"></div>
+              <div class="mt-3"><button class="btn btn-danger btn-sm" @click="stopLive(t)">Stop</button></div>
+            </div>
+          </template>
+          <div x-show="live.length === 0" class="card p-6 text-center text-muted">Tidak ada live saat ini.</div>
+        </div>
+        <div class="card overflow-x-auto hidden md:block">
+          <table class="w-full">
+            <thead><tr><th>Judul</th><th>Customer</th><th>Video</th><th>Status real-time</th><th>Sisa</th><th>Aksi</th></tr></thead>
+            <tbody class="divide-y divide-line">
+              <template x-for="t in live" :key="t.id">
+                <tr>
+                  <td class="font-medium" x-text="t.title"></td>
+                  <td x-text="t.owner"></td>
+                  <td class="text-xs" x-text="t.file_name || '-'"></td>
+                  <td class="text-xs" :class="t.stats && t.stats.age_sec > 15 ? 'text-warn' : ''" x-text="liveText(t)"></td>
+                  <td class="text-xs" x-text="t.remaining_sec !== null ? remain(t.remaining_sec) : 'Manual'"></td>
+                  <td><button class="btn btn-danger btn-sm" @click="stopLive(t)">Stop</button></td>
+                </tr>
+              </template>
+              <tr x-show="live.length === 0"><td colspan="6" class="text-center text-muted p-6">Tidak ada live saat ini.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BANDWIDTH -->
+      <div x-show="dashTab === 'bandwidth'" class="space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="text-sm text-muted">Riwayat dikumpulkan tiap 5 menit</div>
+          <div class="flex gap-2">
+            <button class="chip" :class="bwDays === 7 && 'on'" @click="setBwDays(7)">7 hari</button>
+            <button class="chip" :class="bwDays === 30 && 'on'" @click="setBwDays(30)">30 hari</button>
+            <button class="chip" :class="bwDays === 90 && 'on'" @click="setBwDays(90)">90 hari</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="card p-4">
+            <div class="text-xs text-muted" x-text="'Server · ' + bwMonthLabel + ' · upload'"></div>
+            <div class="text-xl font-bold mt-1" x-text="bw ? bytes(bw.month.up) : '-'"></div>
+          </div>
+          <div class="card p-4">
+            <div class="text-xs text-muted" x-text="'Server · ' + bwMonthLabel + ' · download'"></div>
+            <div class="text-xl font-bold mt-1" x-text="bw ? bytes(bw.month.down) : '-'"></div>
+          </div>
+          <div class="card p-4">
+            <div class="text-xs text-muted" x-text="'Dikirim ke YouTube · ' + bwDays + ' hari'"></div>
+            <div class="text-xl font-bold mt-1 text-accent" x-text="bw ? bytes(bw.customers.reduce((n, c) => n + c.bytes, 0)) : '-'"></div>
+          </div>
+        </div>
+
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div class="font-semibold text-sm">Per hari (server)</div>
+            <div class="flex gap-3 text-xs text-muted">
+              <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-sm bg-indigo-500"></span> upload</span>
+              <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-sm bg-cyan-400"></span> download</span>
+            </div>
+          </div>
+          <div class="space-y-2 max-h-80 overflow-y-auto pr-1">
+            <template x-for="d in bw ? bw.daily : []" :key="d.day">
+              <div class="grid grid-cols-[88px_1fr] gap-3 items-center text-xs">
+                <span class="text-muted" x-text="d.day"></span>
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2"><div class="h-2 rounded bg-indigo-500" :style="'width:' + barPct(d.up) + '%'"></div><span class="text-muted shrink-0" x-text="bytes(d.up)"></span></div>
+                  <div class="flex items-center gap-2"><div class="h-2 rounded bg-cyan-400" :style="'width:' + barPct(d.down) + '%'"></div><span class="text-muted shrink-0" x-text="bytes(d.down)"></span></div>
+                </div>
+              </div>
+            </template>
+            <p x-show="bw && bw.daily.length === 0" class="text-sm text-muted">Belum ada data. Riwayat terkumpul sejak server berjalan.</p>
+          </div>
+        </div>
+
+        <div class="card overflow-x-auto">
+          <div class="px-4 pt-4 pb-2 font-semibold text-sm">Dikirim ke YouTube per customer</div>
+          <table class="w-full">
+            <thead><tr><th>Customer</th><th>Data dikirim</th></tr></thead>
+            <tbody class="divide-y divide-line">
+              <template x-for="c in bw ? bw.customers : []" :key="c.username">
+                <tr><td x-text="c.username"></td><td x-text="bytes(c.bytes)"></td></tr>
+              </template>
+              <tr x-show="bw && bw.customers.length === 0"><td colspan="2" class="text-center text-muted p-4">Belum ada data.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SISTEM -->
+      <div x-show="dashTab === 'sistem'" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-muted">Hasil pemeriksaan kesiapan sistem</div>
+          <span class="badge" :class="systemOk ? 'b-ok' : 'b-bad'" x-text="systemOk ? 'Siap dipakai' : 'Ada yang perlu diperbaiki'"></span>
+        </div>
+        <div class="card p-4">
+          <template x-for="c in system" :key="c.id">
+            <div class="flex items-start gap-3 py-2 border-t border-line first:border-t-0">
+              <iconify-icon class="ico text-lg mt-0.5" :class="c.ok ? 'text-ok' : 'text-err'" :icon="c.ok ? 'tabler:circle-check' : 'tabler:circle-x'"></iconify-icon>
+              <div class="min-w-0">
+                <div class="text-sm font-medium" x-text="c.label"></div>
+                <div class="text-xs text-muted break-all" x-text="c.detail"></div>
+                <div x-show="!c.ok && c.hint" class="text-xs text-warn mt-1" x-text="'Saran: ' + c.hint"></div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CUSTOMER ===================== -->
+    <section x-show="tab==='customer'" class="space-y-5">
+      <div class="flex items-center justify-between gap-3">
+        <h1 class="text-xl md:text-2xl font-semibold">Customer</h1>
+        <button class="btn btn-ghost" @click="refreshAll()" :disabled="refreshing">
+          <iconify-icon icon="tabler:refresh" class="ico" :class="refreshing && 'animate-spin'"></iconify-icon> Refresh
+        </button>
+      </div>
+
+      <div class="card p-4 max-w-2xl">
+        <div class="font-semibold mb-1">Tambah customer</div>
+        <form @submit.prevent="createCustomer()">
+          <div class="grid md:grid-cols-2 gap-3">
+            <div>
+              <label class="lbl">Username</label>
+              <input class="inp" x-model="newC.username" required minlength="3" maxlength="32" autocomplete="off" />
+            </div>
+            <div>
+              <label class="lbl">Sandi awal</label>
+              <div class="flex gap-2">
+                <input class="inp" x-model="newC.password" required minlength="8" autocomplete="off" />
+                <button type="button" class="btn btn-ghost" @click="newC.password = genPassword()" aria-label="Buat sandi acak">
+                  <iconify-icon icon="tabler:refresh" class="ico"></iconify-icon>
+                </button>
+              </div>
+            </div>
+            <div class="md:col-span-2">
+              <label class="lbl">Masa aktif (jam)</label>
+              <input class="inp" type="number" min="1" max="8760" x-model="newC.hours" required />
+              <div class="mt-2 flex flex-wrap gap-2">
+                <button type="button" class="chip" :class="newC.hours == 24 && 'on'" @click="setHours(24)">1 hari (24 jam)</button>
+                <button type="button" class="chip" :class="newC.hours == 168 && 'on'" @click="setHours(168)">7 hari (168 jam)</button>
+                <button type="button" class="chip" :class="newC.hours == 720 && 'on'" @click="setHours(720)">30 hari (720 jam)</button>
+              </div>
+              <p class="mt-2 text-xs text-accent" x-text="hoursHint"></p>
+            </div>
+            <div>
+              <label class="lbl">Paket</label>
+              <select class="inp" x-model="newC.package">
+                <option value="A">Paket A · 3 tugas aktif · 3 GB</option>
+                <option value="B">Paket B · 5 tugas aktif · 5 GB</option>
+                <option value="C">Paket C · 10 tugas aktif · 10 GB</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button class="btn w-full justify-center" type="submit" :disabled="creating">
+                <iconify-icon x-show="creating" icon="tabler:loader-2" class="ico animate-spin"></iconify-icon>
+                <iconify-icon x-show="!creating" icon="tabler:user-plus" class="ico"></iconify-icon>
+                <span x-text="creating ? 'Membuat akun...' : 'Buat customer'"></span>
+              </button>
+            </div>
+          </div>
+          <p class="text-xs text-muted mt-2">Customer wajib mengganti sandi saat login pertama.</p>
+        </form>
+      </div>
+
+      <!-- Kartu untuk HP -->
+      <div class="grid gap-3 md:hidden">
+        <template x-for="c in customersOnly" :key="c.id">
+          <div class="card p-4">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-semibold truncate" x-text="c.username"></div>
+                <div class="text-xs text-muted mt-1" x-text="'Berlaku sampai ' + fmt(c.expires_at)"></div>
+                <div class="text-xs text-muted" x-text="'Sisa ' + remain(c.remaining_sec)"></div>
+              </div>
+              <span class="badge shrink-0" :class="c.disabled ? 'b-off' : (c.remaining_sec > 0 ? 'b-ok' : 'b-bad')"
+                    x-text="c.disabled ? 'Nonaktif' : (c.remaining_sec > 0 ? 'Aktif' : 'Habis')"></span>
+            </div>
+            <div class="mt-3 text-xs text-muted">
+              Storage <span x-text="bytes(c.used_bytes) + ' / ' + bytes(c.storage_limit_bytes)"></span> · Live <span x-text="c.live_count"></span>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2 items-center">
+              <div class="inline-flex rounded-lg border border-line overflow-hidden text-xs">
+                <template x-for="p in ['A','B','C']" :key="p">
+                  <button class="px-2.5 py-1" :class="c.package === p ? 'bg-accent-soft text-accent-ink font-semibold' : 'text-muted'" @click="setPackage(c, p)" x-text="'Paket ' + p"></button>
+                </template>
+              </div>
+              <button class="btn btn-sm" @click="extend(c, 24)">+1 hari</button>
+              <button class="btn btn-sm" @click="extend(c, 168)">+7 hari</button>
+              <button class="btn btn-sm" @click="extend(c, 720)">+30 hari</button>
+              <button class="btn btn-sm btn-ghost" @click="resetPw(c)"><iconify-icon icon="tabler:copy" class="ico"></iconify-icon> Reset &amp; salin sandi</button>
+              <button class="btn btn-sm btn-warn" x-show="c.live_count > 0" @click="stopAll(c)">Stop live</button>
+              <button class="btn btn-sm" :class="c.disabled ? 'btn-ghost' : 'btn-danger'" @click="toggle(c)" x-text="c.disabled ? 'Aktifkan' : 'Nonaktifkan'"></button>
+            </div>
+          </div>
+        </template>
+        <p x-show="customersOnly.length === 0" class="text-center text-muted py-6">Belum ada customer.</p>
+      </div>
+
+      <!-- Tabel untuk desktop -->
+      <div class="card overflow-x-auto hidden md:block">
+        <table class="w-full">
+          <thead><tr><th>Username</th><th>Paket</th><th>Status</th><th>Masa aktif</th><th>Storage</th><th>Live</th><th>Aksi</th></tr></thead>
+          <tbody class="divide-y divide-line">
+            <template x-for="c in customersOnly" :key="c.id">
+              <tr>
+                <td class="font-medium" x-text="c.username"></td>
+                <td>
+                  <div class="inline-flex rounded-lg border border-line overflow-hidden text-xs">
+                    <template x-for="p in ['A','B','C']" :key="p">
+                      <button class="px-2.5 py-1" :class="c.package === p ? 'bg-accent-soft text-accent-ink font-semibold' : 'text-muted'" @click="setPackage(c, p)" x-text="p"></button>
+                    </template>
+                  </div>
+                </td>
+                <td><span class="badge" :class="c.disabled ? 'b-off' : (c.remaining_sec > 0 ? 'b-ok' : 'b-bad')" x-text="c.disabled ? 'Nonaktif' : (c.remaining_sec > 0 ? 'Aktif' : 'Habis')"></span></td>
+                <td>
+                  <div x-text="fmt(c.expires_at)"></div>
+                  <div class="text-xs text-muted" x-text="'Sisa ' + remain(c.remaining_sec)"></div>
+                </td>
+                <td class="text-xs">
+                  <div x-text="bytes(c.used_bytes) + ' / ' + bytes(c.storage_limit_bytes)"></div>
+                  <div class="h-1.5 w-28 rounded-full bg-raised mt-1 overflow-hidden"><div class="h-1.5 bg-indigo-500" :style="'width:' + pct(c) + '%'"></div></div>
+                </td>
+                <td x-text="c.live_count"></td>
+                <td>
+                  <div class="flex flex-wrap gap-1">
+                    <button class="btn btn-sm" @click="extend(c, 24)">+1 hari</button>
+                    <button class="btn btn-sm" @click="extend(c, 168)">+7 hari</button>
+                    <button class="btn btn-sm" @click="extend(c, 720)">+30 hari</button>
+                    <button class="btn btn-sm btn-ghost" @click="resetPw(c)"><iconify-icon icon="tabler:copy" class="ico"></iconify-icon> Reset &amp; salin sandi</button>
+                    <button class="btn btn-sm btn-warn" x-show="c.live_count > 0" @click="stopAll(c)">Stop live</button>
+                    <button class="btn btn-sm" :class="c.disabled ? 'btn-ghost' : 'btn-danger'" @click="toggle(c)" x-text="c.disabled ? 'Aktifkan' : 'Nonaktifkan'"></button>
+                  </div>
+                </td>
+              </tr>
+            </template>
+            <tr x-show="customersOnly.length === 0"><td colspan="7" class="text-center text-muted p-6">Belum ada customer.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== BERKAS ===================== -->
+    <section x-show="tab==='berkas'" class="space-y-4">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <h1 class="text-xl md:text-2xl font-semibold">Berkas</h1>
+        <span class="text-sm text-muted" x-text="files.length + ' file'"></span>
+      </div>
+
+      <div class="grid gap-3 md:hidden">
+        <template x-for="f in files" :key="f.id">
+          <div class="card p-3 flex gap-3 items-center">
+            <template x-if="f.has_thumb"><img class="thumb cursor-pointer shrink-0" :src="thumbUrl(f)" alt="" @click="f.status === 'ready' && openPreview(f)" /></template>
+            <template x-if="!f.has_thumb"><div class="thumb-empty shrink-0" x-text="f.status === 'downloading' ? 'Mengunduh' : 'Tanpa thumb'"></div></template>
+            <div class="min-w-0 flex-1">
+              <div class="font-medium truncate" x-text="f.filename || '(belum ada nama)'"></div>
+              <div class="text-xs text-muted truncate" x-text="'Customer: ' + f.owner"></div>
+              <div class="text-xs text-muted mt-1">
+                <span x-text="f.size_bytes ? bytes(f.size_bytes) : '-'"></span>
+                · <span class="badge" :class="f.status === 'ready' ? 'b-ok' : (f.status === 'failed' ? 'b-bad' : 'b-warn')" x-text="f.status"></span>
+              </div>
+              <div class="mt-2 flex gap-2">
+                <button x-show="f.status === 'ready'" class="btn btn-sm" @click="openPreview(f)">Preview</button>
+                <button class="btn btn-sm btn-danger" @click="deleteFile(f)">Hapus</button>
+              </div>
+            </div>
+          </div>
+        </template>
+        <div x-show="files.length === 0" class="card p-6 text-center text-muted">Belum ada berkas.</div>
+      </div>
+
+      <div class="card overflow-x-auto hidden md:block">
+        <table class="w-full">
+          <thead><tr><th>Preview</th><th>Nama file</th><th>Customer</th><th>Ukuran</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody class="divide-y divide-line">
+            <template x-for="f in files" :key="f.id">
+              <tr>
+                <td>
+                  <template x-if="f.has_thumb"><img class="thumb cursor-pointer" :src="thumbUrl(f)" alt="" @click="f.status === 'ready' && openPreview(f)" /></template>
+                  <template x-if="!f.has_thumb"><div class="thumb-empty" x-text="f.status === 'downloading' ? 'Mengunduh' : 'Tanpa thumb'"></div></template>
+                </td>
+                <td class="max-w-[260px]">
+                  <div class="truncate" x-text="f.filename || '(belum ada nama)'"></div>
+                  <div x-show="f.error" class="text-xs text-err truncate" x-text="f.error"></div>
+                </td>
+                <td x-text="f.owner"></td>
+                <td x-text="f.size_bytes ? bytes(f.size_bytes) : '-'"></td>
+                <td><span class="badge" :class="f.status === 'ready' ? 'b-ok' : (f.status === 'failed' ? 'b-bad' : 'b-warn')" x-text="f.status"></span></td>
+                <td>
+                  <div class="flex gap-1">
+                    <button x-show="f.status === 'ready'" class="btn btn-sm" @click="openPreview(f)">Preview</button>
+                    <button class="btn btn-sm btn-danger" @click="deleteFile(f)">Hapus</button>
+                  </div>
+                </td>
+              </tr>
+            </template>
+            <tr x-show="files.length === 0"><td colspan="6" class="text-center text-muted p-6">Belum ada berkas.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== AUDIT ===================== -->
+    <section x-show="tab==='audit'">
+      <h1 class="text-xl md:text-2xl font-semibold mb-4">Audit log</h1>
+      <div class="grid gap-2 md:hidden">
+        <template x-for="(a, i) in audit" :key="i">
+          <div class="card p-3 text-sm">
+            <div class="flex justify-between gap-2"><span class="font-medium" x-text="a.action"></span><span class="text-xs text-muted" x-text="fmt(a.at)"></span></div>
+            <div class="text-xs text-muted mt-1">oleh <span x-text="a.admin || '-'"></span> · target <span x-text="a.target || '-'"></span></div>
+            <div class="text-xs text-muted" x-text="a.detail"></div>
+          </div>
+        </template>
+        <div x-show="audit.length === 0" class="card p-6 text-center text-muted">Belum ada aktivitas.</div>
+      </div>
+      <div class="card overflow-x-auto hidden md:block">
+        <table class="w-full">
+          <thead><tr><th>Waktu</th><th>Admin</th><th>Aksi</th><th>Target</th><th>Detail</th></tr></thead>
+          <tbody class="divide-y divide-line">
+            <template x-for="(a, i) in audit" :key="i">
+              <tr>
+                <td class="text-xs" x-text="fmt(a.at)"></td>
+                <td x-text="a.admin || '-'"></td>
+                <td x-text="a.action"></td>
+                <td x-text="a.target || '-'"></td>
+                <td class="text-xs text-muted" x-text="a.detail"></td>
+              </tr>
+            </template>
+            <tr x-show="audit.length === 0"><td colspan="5" class="text-center text-muted p-6">Belum ada aktivitas.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== AKUN ===================== -->
+    <section x-show="tab==='akun'">
+      <h1 class="text-xl md:text-2xl font-semibold mb-4">Akun &amp; sandi</h1>
+      <div class="card p-5 max-w-md">
+        <div class="font-semibold mb-1">Ganti sandi</div>
+        <div x-show="me && me.must_change_password" class="mb-2 rounded-lg border border-warn-line bg-warn-soft p-3 text-sm text-warn">
+          Sandi kamu masih sandi awal. Disarankan segera diganti.
+        </div>
+        <form @submit.prevent="changePw()">
+          <label class="lbl">Sandi lama</label>
+          <input class="inp" type="password" x-model="pw.old" autocomplete="current-password" required />
+          <label class="lbl">Sandi baru (minimal 8 karakter)</label>
+          <input class="inp" type="password" minlength="8" x-model="pw.n1" autocomplete="new-password" required />
+          <label class="lbl">Ulangi sandi baru</label>
+          <input class="inp" type="password" minlength="8" x-model="pw.n2" autocomplete="new-password" required />
+          <button class="btn mt-4 w-full justify-center" type="submit">Simpan sandi baru</button>
+          <p x-show="pwMsg" x-text="pwMsg" class="mt-3 text-sm" :class="pwOk ? 'text-ok' : 'text-err'"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- NAV BAWAH MOBILE -->
+<nav class="md:hidden fixed bottom-0 inset-x-0 z-40 grid grid-cols-4 bg-surface/95 backdrop-blur border-t border-line pb-[env(safe-area-inset-bottom)]">
+  <button class="mnav" :class="tab==='dashboard' && 'on'" @click="go('dashboard')">
+    <iconify-icon icon="tabler:layout-dashboard" class="text-xl"></iconify-icon><span>Dashboard</span>
+  </button>
+  <button class="mnav" :class="tab==='customer' && 'on'" @click="go('customer')">
+    <iconify-icon icon="tabler:users" class="text-xl"></iconify-icon><span>Customer</span>
+  </button>
+  <button class="mnav" :class="tab==='berkas' && 'on'" @click="go('berkas')">
+    <iconify-icon icon="tabler:movie" class="text-xl"></iconify-icon><span>Berkas</span>
+  </button>
+  <button class="mnav" @click="moreOpen = true">
+    <iconify-icon icon="tabler:dots" class="text-xl"></iconify-icon><span>Lainnya</span>
+  </button>
+</nav>
+
+<!-- SHEET LAINNYA -->
+<div x-show="moreOpen" x-cloak class="md:hidden fixed inset-0 z-50 bg-black/60" @click.self="moreOpen = false">
+  <div class="absolute bottom-0 inset-x-0 bg-surface rounded-t-2xl p-4 pb-8 border-t border-line">
+    <div class="mx-auto h-1 w-10 rounded-full bg-muted mb-4"></div>
+    <div class="grid gap-2">
+      <button class="nav" @click="go('audit')"><iconify-icon icon="tabler:history" class="ico"></iconify-icon> Audit log</button>
+      <button class="nav" @click="go('akun')"><iconify-icon icon="tabler:key" class="ico"></iconify-icon> Akun &amp; sandi</button>
+      <button class="nav text-err" @click="logout()"><iconify-icon icon="tabler:logout" class="ico"></iconify-icon> Logout</button>
+    </div>
+  </div>
+</div>
+
+<!-- KARTU INFO AKUN -->
+<div x-show="created" x-cloak class="fixed inset-0 z-50 bg-black/60 flex items-end md:items-center justify-center md:p-4" @click.self="created = null">
+  <div class="card w-full md:max-w-md rounded-b-none md:rounded-2xl p-5 max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <iconify-icon icon="tabler:circle-check" class="text-xl text-ok"></iconify-icon>
+        <h3 class="font-semibold" x-text="created && created.mode === 'reset' ? 'Sandi baru dibuat' : 'Akun siap dikirim'"></h3>
+      </div>
+      <button class="btn btn-sm btn-ghost" @click="created = null" aria-label="Tutup"><iconify-icon icon="tabler:x"></iconify-icon></button>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center justify-between gap-2 rounded-lg bg-raised p-2.5">
+        <div class="min-w-0"><div class="text-xs text-muted">Username</div><div class="font-mono truncate" x-text="created ? created.username : ''"></div></div>
+        <button class="btn btn-sm btn-ghost shrink-0" @click="copyText(created.username, 'user')">
+          <iconify-icon :icon="copiedKey === 'user' ? 'tabler:check' : 'tabler:copy'" class="ico"></iconify-icon>
+          <span x-text="copiedKey === 'user' ? 'Tersalin' : 'Salin'"></span>
+        </button>
+      </div>
+      <div class="flex items-center justify-between gap-2 rounded-lg bg-raised p-2.5">
+        <div class="min-w-0"><div class="text-xs text-muted">Password</div><div class="font-mono truncate" x-text="created ? created.password : ''"></div></div>
+        <button class="btn btn-sm btn-ghost shrink-0" @click="copyText(created.password, 'pw')">
+          <iconify-icon :icon="copiedKey === 'pw' ? 'tabler:check' : 'tabler:copy'" class="ico"></iconify-icon>
+          <span x-text="copiedKey === 'pw' ? 'Tersalin' : 'Salin'"></span>
+        </button>
+      </div>
+      <div class="rounded-lg bg-raised p-2.5"><div class="text-xs text-muted">Paket</div><div x-text="createdInfo"></div></div>
+      <div class="rounded-lg bg-raised p-2.5"><div class="text-xs text-muted">Masa aktif sampai</div><div x-text="created && created.expires_at ? fmt(created.expires_at) : '-'"></div></div>
+    </div>
+    <div class="mt-4">
+      <div class="text-xs text-muted mb-1">Pesan siap kirim</div>
+      <pre class="rounded-lg bg-input border border-line p-3 text-xs whitespace-pre-wrap" x-text="accountMessage(created)"></pre>
+      <button class="btn w-full justify-center mt-3" @click="copyText(accountMessage(created), 'msg')">
+        <iconify-icon :icon="copiedKey === 'msg' ? 'tabler:check' : 'tabler:copy'" class="ico"></iconify-icon>
+        <span x-text="copiedKey === 'msg' ? 'Pesan tersalin' : 'Salin pesan untuk customer'"></span>
+      </button>
+      <p class="text-xs text-muted mt-2">Password tidak disimpan dalam bentuk teks. Salin sebelum menutup kartu ini.</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PREVIEW -->
+<div x-show="preview" x-cloak class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" @click.self="closePreview()">
+  <div class="card w-full max-w-3xl p-4">
+    <div class="flex justify-between items-center mb-3 gap-2">
+      <div class="min-w-0">
+        <strong class="truncate block" x-text="preview ? preview.filename : ''"></strong>
+        <span class="text-xs text-muted" x-text="preview ? 'Customer: ' + preview.owner : ''"></span>
+      </div>
+      <button class="btn btn-ghost" @click="closePreview()">Tutup</button>
+    </div>
+    <video class="w-full rounded-lg bg-black" controls preload="metadata" :src="preview ? streamUrl(preview) : ''"></video>
+  </div>
+</div>
+
+<script src="/js/util.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/admin-app.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</body>
+</html>

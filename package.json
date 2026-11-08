@@ -1,0 +1,25 @@
+{
+  "name": "tubyu-live-panel",
+  "version": "0.11.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "doctor": "node src/doctor.js",
+    "gensecret": "node scripts/gensecret.js",
+    "start": "node --no-warnings src/server.js",
+    "admin": "node --no-warnings src/admin.js",
+    "test": "node --test tests/unit.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "ffmpeg-static": "^5.2.0"
+  },
+  "description": "Tubyu Live Panel: panel live streaming dari file video ke YouTube",
+  "license": "UNLICENSED"
+}

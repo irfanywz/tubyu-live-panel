@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tubyu Live Panel</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<meta name="theme-color" content="#0b0d14" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { colors: {
+    app: 'rgb(var(--c-app) / <alpha-value>)',
+    surface: 'rgb(var(--c-surface) / <alpha-value>)',
+    raised: 'rgb(var(--c-raised) / <alpha-value>)',
+    input: 'rgb(var(--c-input) / <alpha-value>)',
+    line: 'rgb(var(--c-line) / <alpha-value>)',
+    ink: 'rgb(var(--c-ink) / <alpha-value>)',
+    muted: 'rgb(var(--c-muted) / <alpha-value>)',
+  } } } };
+</script>
+<link rel="stylesheet" href="/css/theme.css" />
+<script>document.documentElement.dataset.theme = localStorage.getItem('theme') || 'dark';</script>
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+
+</head>
+<body class="bg-app text-ink min-h-screen font-sans" x-data="app()" x-init="init()">
+
+<!-- LOGIN -->
+<div x-show="!me" x-cloak class="min-h-screen flex items-center justify-center p-4">
+  <div class="card w-full max-w-sm p-6" :class="loginShake && 'shake'">
+    <div class="flex items-center gap-3 mb-1"><img src="/img/logo.svg" alt="" class="h-10 w-10" /><div><div class="font-semibold leading-tight">Tubyu Live Panel</div><div class="text-xs text-muted">Masuk untuk melanjutkan</div></div></div>
+    <div x-show="loginWarn" x-text="loginWarn" class="mt-3 rounded-lg border border-err-line bg-err-soft p-3 text-sm text-err"></div>
+    <form @submit.prevent="doLogin()">
+      <label class="lbl">Username</label>
+      <input class="inp" x-model="login.username" autocomplete="username" required />
+      <label class="lbl">Password</label>
+      <input class="inp" type="password" x-model="login.password" autocomplete="current-password" required />
+      <button class="btn btn-go justify-center" type="submit" :disabled="loginBusy">
+        <iconify-icon x-show="loginBusy" icon="tabler:loader-2" class="animate-spin"></iconify-icon>
+        <iconify-icon x-show="!loginBusy" icon="tabler:login"></iconify-icon>
+        <span x-text="loginBusy ? 'Memeriksa...' : 'Masuk'"></span>
+      </button>
+      <p x-show="loginMsg" x-text="loginMsg" class="mt-3 text-sm text-err"></p>
+    </form>
+  </div>
+</div>
+
+<!-- APP -->
+<div x-show="me" x-cloak class="flex min-h-screen flex-col md:flex-row">
+  <aside class="hidden md:flex md:w-56 md:flex-col bg-surface border-r border-line p-4 gap-2 md:sticky md:top-0 md:h-screen md:overflow-y-auto">
+    <div class="flex items-center gap-2">
+      <img src="/img/logo.svg" alt="" class="h-8 w-8 shrink-0" />
+      <h3 class="font-semibold leading-tight">Tubyu Live Panel</h3>
+    </div>
+    <p class="text-xs text-muted truncate" x-text="me ? 'Halo, ' + me.username : ''"></p>
+    <div class="rounded-lg bg-slate-200 text-indigo-800 font-bold text-center py-2 my-2 font-mono text-sm" x-text="clockText"></div>
+    <div class="text-sm text-muted" x-text="me ? 'Masa aktif: ' + remain(me.remaining_sec) : ''"></div>
+    <nav class="flex flex-col gap-2 mt-3">
+      <button class="nav-btn" :class="view==='dashboard' && 'on'" @click="go('dashboard')"><iconify-icon icon="tabler:layout-dashboard" class="ico"></iconify-icon> Dashboard</button>
+      <button class="nav-btn" :class="view==='create' && 'on'" @click="go('create')"><iconify-icon icon="tabler:circle-plus" class="ico"></iconify-icon> Buat Tugas Live</button>
+      <button class="nav-btn" :class="view==='files' && 'on'" @click="go('files')"><iconify-icon icon="tabler:movie" class="ico"></iconify-icon> Berkas Video</button>
+      <button class="nav-btn" :class="view==='archive' && 'on'" @click="go('archive')"><iconify-icon icon="tabler:archive" class="ico"></iconify-icon> Arsip Live</button>
+      <button class="nav-btn" :class="view==='settings' && 'on'" @click="go('settings')"><iconify-icon icon="tabler:settings" class="ico"></iconify-icon> Pengaturan</button>
+    </nav>
+    <button class="btn btn-ghost w-full mt-auto" @click="toggleTheme()">
+      <iconify-icon :icon="theme === 'dark' ? 'tabler:sun' : 'tabler:moon'" class="ico"></iconify-icon>
+      <span x-text="theme === 'dark' ? 'Mode terang' : 'Mode gelap'"></span>
+    </button>
+    <button class="btn btn-ghost w-full" @click="logout()"><iconify-icon icon="tabler:logout" class="ico"></iconify-icon> Logout</button>
+  </aside>
+
+  <!-- HEADER MOBILE -->
+  <header class="md:hidden fixed top-0 inset-x-0 z-40 bg-surface/95 backdrop-blur border-b border-line">
+    <div class="flex items-center justify-between gap-3 px-4 h-14">
+      <div class="flex items-center gap-2 min-w-0">
+        <img src="/img/logo.svg" alt="" class="h-7 w-7 shrink-0" />
+        <div class="min-w-0">
+          <div class="font-semibold text-sm leading-tight truncate">Tubyu Live Panel</div>
+          <div class="text-[11px] text-muted truncate" x-text="me ? 'Halo, ' + me.username : ''"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button class="btn btn-sm btn-ghost" @click="toggleTheme()" aria-label="Ganti tema">
+          <iconify-icon :icon="theme === 'dark' ? 'tabler:sun' : 'tabler:moon'" class="ico"></iconify-icon>
+        </button>
+        <button class="btn btn-sm btn-ghost" @click="logout()" aria-label="Logout">
+          <iconify-icon icon="tabler:logout" class="ico"></iconify-icon>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAV BAWAH MOBILE -->
+  <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 grid grid-cols-5 bg-surface/95 backdrop-blur border-t border-line pb-[env(safe-area-inset-bottom)]">
+    <button class="mnav" :class="view==='dashboard' && 'on'" @click="go('dashboard')">
+      <iconify-icon icon="tabler:layout-dashboard" class="text-xl"></iconify-icon><span>Dashboard</span>
+    </button>
+    <button class="mnav" :class="view==='create' && 'on'" @click="go('create')">
+      <iconify-icon icon="tabler:circle-plus" class="text-xl"></iconify-icon><span>Buat Tugas Live</span>
+    </button>
+    <button class="mnav" :class="view==='files' && 'on'" @click="go('files')">
+      <iconify-icon icon="tabler:movie" class="text-xl"></iconify-icon><span>Berkas Video</span>
+    </button>
+    <button class="mnav" :class="view==='archive' && 'on'" @click="go('archive')">
+      <iconify-icon icon="tabler:archive" class="text-xl"></iconify-icon><span>Arsip Live</span>
+    </button>
+    <button class="mnav" :class="view==='settings' && 'on'" @click="go('settings')">
+      <iconify-icon icon="tabler:settings" class="text-xl"></iconify-icon><span>Pengaturan</span>
+    </button>
+  </nav>
+
+  <!-- FAB buat tugas di mobile -->
+  <button x-show="view==='dashboard'" x-cloak class="md:hidden fixed right-4 bottom-20 z-40 h-12 w-12 rounded-full bg-indigo-500 text-white shadow-lg flex items-center justify-center"
+          @click="go('create')" aria-label="Buat tugas">
+    <iconify-icon icon="tabler:plus" class="text-xl"></iconify-icon>
+  </button>
+
+  <main class="flex-1 min-w-0 px-3 pt-20 pb-24 md:p-6 md:pt-6 overflow-auto">
+
+    <!-- DASHBOARD -->
+    <section x-show="view==='dashboard'" x-cloak class="space-y-4">
+
+      <!-- Masa aktif: mobile saja (desktop sudah di sidebar) -->
+      <div class="md:hidden rounded-xl px-4 py-2.5 text-center text-sm font-semibold"
+           :class="me && me.remaining_sec < 259200 ? 'bg-amber-500 text-black' : 'bg-accent-soft text-accent-ink'"
+           x-text="me ? 'Sisa masa aktif: ' + remain(me.remaining_sec) : ''"></div>
+
+      <div x-show="me && me.must_change_password" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warn-line bg-warn-soft p-3 text-sm text-warn">
+        <span>Disarankan mengganti sandi awal kamu demi keamanan.</span>
+        <button class="btn btn-sm btn-ghost" @click="go('settings')">Ganti sandi</button>
+      </div>
+
+      <div class="flex items-end justify-between gap-3">
+        <div class="min-w-0">
+          <h1 class="text-xl md:text-2xl font-semibold">Dashboard</h1>
+          <p class="text-xs text-muted truncate" x-text="me ? 'Halo, ' + me.username : ''"></p>
+        </div>
+        <button class="btn hidden md:inline-flex items-center gap-2" @click="go('create')">
+          <iconify-icon icon="tabler:plus" class="ico"></iconify-icon> Buat tugas
+        </button>
+      </div>
+
+      <!-- Batas paket -->
+      <div class="card p-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+        <span class="badge b-idle" x-text="me && me.limits ? me.limits.label : ''"></span>
+        <span class="text-muted">Tugas aktif <b class="text-ink" x-text="tasks.length + ' / ' + (me && me.limits ? me.limits.maxActive : '-')"></b></span>
+        <span class="text-muted">Live bersamaan <b class="text-ink" x-text="liveCount + ' / ' + (me && me.limits ? me.limits.maxLive : '-')"></b></span>
+        <span class="text-muted sm:ml-auto">Tugas selesai tidak dihitung.</span>
+      </div>
+
+      <!-- Ringkasan -->
+      <div class="grid grid-cols-3 gap-2">
+        <button class="card p-3 text-left" @click="taskFilter = 'live'">
+          <div class="flex items-center gap-1.5 text-xs text-muted">
+            <span class="h-2 w-2 rounded-full" :class="statusCounts.live ? 'bg-red-500 animate-pulse' : 'bg-slate-600'"></span> Live
+          </div>
+          <div class="mt-1 text-2xl font-bold" :class="statusCounts.live ? 'text-err' : 'text-ink'" x-text="statusCounts.live"></div>
+        </button>
+        <button class="card p-3 text-left" @click="taskFilter = 'scheduled'">
+          <div class="text-xs text-muted">Terjadwal</div>
+          <div class="mt-1 text-2xl font-bold text-warn" x-text="statusCounts.scheduled"></div>
+        </button>
+        <button class="card p-3 text-left" @click="taskFilter = 'idle'">
+          <div class="text-xs text-muted">Manual</div>
+          <div class="mt-1 text-2xl font-bold text-info" x-text="statusCounts.idle"></div>
+        </button>
+      </div>
+
+      <!-- Cari dan filter -->
+      <div class="space-y-2">
+        <div class="relative">
+          <iconify-icon icon="tabler:search" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted"></iconify-icon>
+          <input class="inp pl-9" placeholder="Cari judul tugas..." x-model="taskQ" />
+        </div>
+        <div class="flex gap-2 overflow-x-auto pb-1">
+          <button class="chip" :class="taskFilter === '' && 'on'" @click="taskFilter = ''">Semua <span x-text="statusCounts.all"></span></button>
+          <button class="chip" :class="taskFilter === 'live' && 'on'" @click="taskFilter = 'live'">Live</button>
+          <button class="chip" :class="taskFilter === 'scheduled' && 'on'" @click="taskFilter = 'scheduled'">Terjadwal</button>
+          <button class="chip" :class="taskFilter === 'idle' && 'on'" @click="taskFilter = 'idle'">Manual</button>
+        </div>
+      </div>
+
+      <!-- Kartu tugas -->
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <template x-for="t in visibleTasks" :key="t.id">
+          <article class="card overflow-hidden flex flex-col" :class="t.status === 'live' && 'ring-1 ring-red-500/50'">
+            <div class="p-4 pb-3">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <h3 class="font-semibold truncate" x-text="t.title"></h3>
+                  <p class="text-xs text-muted truncate" x-text="t.file_name || 'Video tidak diketahui'"></p>
+                </div>
+                <span class="badge shrink-0" :class="'b-' + t.status" x-text="statusLabel(t.status)"></span>
+              </div>
+
+              <!-- Live: progres dan sisa waktu -->
+              <div x-show="t.status === 'live'" class="mt-3">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-ink truncate" x-text="liveText(t)"></span>
+                  <span class="shrink-0 font-semibold" x-text="t.remaining_sec !== null ? remain(t.remaining_sec) : 'Tanpa batas'"></span>
+                </div>
+                <div class="mt-1.5 h-1.5 rounded-full bg-raised overflow-hidden">
+                  <div class="h-1.5 bg-gradient-to-r from-red-500 to-pink-500 transition-all duration-1000"
+                       :class="progress(t) === null && 'animate-pulse'"
+                       :style="'width:' + (progress(t) === null ? 100 : progress(t)) + '%'"></div>
+                </div>
+              </div>
+
+              <!-- Tidak live: jadwal singkat -->
+              <p x-show="t.status !== 'live'" class="mt-2 text-xs text-muted whitespace-pre-line" x-text="jadwalText(t)"></p>
+              <p x-show="t.last_error" class="mt-2 text-xs text-err" x-text="t.last_error"></p>
+            </div>
+
+            <!-- Aksi utama -->
+            <div class="px-4 pb-4">
+              <button x-show="t.status === 'live'" class="btn w-full justify-center bg-red-600 hover:bg-red-500" @click="stopTask(t)">
+                <iconify-icon icon="tabler:player-stop-filled" class="ico"></iconify-icon> Hentikan live
+              </button>
+              <button x-show="['idle','scheduled'].includes(t.status)" class="btn w-full justify-center" @click="startTask(t)">
+                <iconify-icon icon="tabler:player-play-filled" class="ico"></iconify-icon> Mulai sekarang
+              </button>
+            </div>
+
+            <!-- Detail, bisa dibuka -->
+            <div class="border-t border-line text-xs pt-3">
+              <div class="grid grid-cols-[96px_1fr] gap-x-3 gap-y-2 px-4 pb-4">
+                <span class="text-muted">Stream key</span>
+                <span class="flex flex-wrap items-center gap-2 min-w-0">
+                  <code class="break-all text-ink" x-text="revealed[t.id] || t.key_hint"></code>
+                  <button class="btn btn-sm btn-ghost" @click="toggleKey(t)" x-text="revealed[t.id] ? 'Tutup' : 'Lihat'"></button>
+                  <button x-show="revealed[t.id]" class="btn btn-sm btn-ghost" :class="copiedId === t.id && 'copied-pop'" @click="copyKey(t)">
+                    <iconify-icon class="ico" :icon="copiedId === t.id ? 'tabler:check' : 'tabler:copy'"></iconify-icon>
+                    <span x-text="copiedId === t.id ? 'Tersalin' : 'Salin'"></span>
+                  </button>
+                </span>
+                <span class="text-muted">PID</span><span x-text="t.pid ?? '-'"></span>
+                <span class="text-muted">Mulai</span><span x-text="fmt(t.started_at)"></span>
+                <span class="text-muted">Berhenti</span><span x-text="fmt(t.ended_at)"></span>
+                <span class="text-muted">Pengulangan</span><span x-text="pengulanganText(t)"></span>
+                <span class="text-muted">Auto stop</span><span x-text="autoStopText(t)"></span>
+                <span class="text-muted">ID tugas</span><span x-text="t.id"></span>
+              </div>
+            </div>
+
+            <!-- Aksi sekunder -->
+            <div class="border-t border-line grid grid-cols-4 text-xs">
+              <button x-show="t.status !== 'live'" class="action" @click="openEdit(t)"><iconify-icon icon="tabler:pencil"></iconify-icon>Edit</button>
+              <button class="action" @click="showLogs(t)"><iconify-icon icon="tabler:file-text"></iconify-icon>Log</button>
+              <button class="action" :class="copiedId === t.id && 'copied-pop'" x-show="t.status !== 'live'" @click="copyKey(t)">
+                <iconify-icon :icon="copiedId === t.id ? 'tabler:check' : 'tabler:copy'"></iconify-icon>
+                <span x-text="copiedId === t.id ? 'Tersalin' : 'Salin key'"></span>
+              </button>
+              <button x-show="t.status !== 'live'" class="action text-err" @click="delTask(t)"><iconify-icon icon="tabler:trash"></iconify-icon>Hapus</button>
+            </div>
+          </article>
+        </template>
+
+        <div x-show="visibleTasks.length === 0" class="card p-8 text-center sm:col-span-2 xl:col-span-3">
+          <iconify-icon icon="tabler:broadcast-off" class="text-4xl text-muted"></iconify-icon>
+          <p class="mt-2 text-ink font-medium" x-text="tasks.length === 0 ? 'Belum ada tugas live' : 'Tidak ada tugas yang cocok'"></p>
+          <p class="text-xs text-muted mt-1" x-text="tasks.length === 0 ? 'Buat tugas pertama dari video yang sudah kamu unduh.' : 'Coba ubah pencarian atau filter.'"></p>
+          <button x-show="tasks.length === 0" class="btn mt-4" @click="go('create')">
+            <iconify-icon icon="tabler:plus" class="ico"></iconify-icon> Buat tugas
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CREATE -->
+    <section x-show="view==='create'" x-cloak>
+      <h1 class="text-2xl font-semibold mb-4">Buat Tugas Live Baru</h1>
+
+      <!-- Panduan: tertutup secara default, tidak mengganggu form -->
+      <div class="card mb-4 max-w-2xl overflow-hidden" x-data="{ open: false }">
+        <button type="button" class="w-full flex items-center justify-between gap-3 p-4 text-left" @click="open = !open">
+          <span class="flex items-center gap-2">
+            <iconify-icon icon="tabler:book-2" class="text-lg text-accent"></iconify-icon>
+            <span class="font-semibold">Panduan singkat</span>
+            <span class="text-xs text-muted hidden sm:inline">cara ambil stream key dan arti istilah</span>
+          </span>
+          <iconify-icon icon="tabler:chevron-down" class="transition" :class="open && 'rotate-180'"></iconify-icon>
+        </button>
+
+        <div x-show="open" x-collapse class="border-t border-line px-4 pb-4 pt-3 text-sm space-y-5">
+
+          <div>
+            <div class="font-semibold mb-1">Cara mengambil stream key</div>
+            <ol class="list-decimal pl-5 space-y-1 text-muted">
+              <li>Buka <b class="text-ink">YouTube Studio</b>.</li>
+              <li>Pilih <b class="text-ink">Buat</b>, lalu <b class="text-ink">Go live</b>.</li>
+              <li>Salin <b class="text-ink">Stream key</b> dan tempel di form.</li>
+            </ol>
+            <p class="text-xs text-muted mt-2">Stream key itu rahasia. Jangan bagikan ke orang lain.</p>
+          </div>
+
+          <div>
+            <div class="font-semibold mb-2">Istilah di form</div>
+            <dl class="space-y-3">
+              <div><dt class="font-medium">Judul tugas</dt><dd class="text-muted">Nama untuk kamu sendiri. Tidak tampil di YouTube.</dd></div>
+              <div><dt class="font-medium">Video</dt><dd class="text-muted">File yang sudah diunduh di menu Berkas Video.</dd></div>
+              <div><dt class="font-medium">Jadwal mulai</dt><dd class="text-muted">Waktu live dimulai otomatis. Kosongkan kalau mau memulai sendiri lewat tombol Mulai.</dd></div>
+              <div><dt class="font-medium">Jadwal stop</dt><dd class="text-muted">Waktu live dihentikan otomatis.</dd></div>
+              <div><dt class="font-medium">Auto-stop</dt><dd class="text-muted">Live berhenti setelah durasi tertentu sejak mulai. Diabaikan kalau jadwal stop sudah diisi.</dd></div>
+              <div><dt class="font-medium">Pengulangan</dt><dd class="text-muted">Tugas diulang setiap hari atau minggu. Harus ada jadwal mulai dan (jadwal stop atau auto-stop).</dd></div>
+            </dl>
+          </div>
+
+          <div>
+            <div class="font-semibold mb-2">Istilah batas paket</div>
+            <dl class="space-y-3">
+              <div><dt class="font-medium">Tugas aktif</dt><dd class="text-muted">Tugas yang belum selesai: manual, terjadwal, atau sedang live. Tugas yang sudah selesai tidak dihitung.</dd></div>
+              <div><dt class="font-medium">Live bersamaan</dt><dd class="text-muted">Jumlah live yang boleh berjalan sekaligus.</dd></div>
+              <div><dt class="font-medium">Masa aktif</dt><dd class="text-muted">Sampai kapan akun bisa dipakai. Untuk memperpanjang, hubungi admin.</dd></div>
+            </dl>
+          </div>
+
+          <div>
+            <div class="font-semibold mb-2">Pilih cepat</div>
+            <p class="text-muted">Tombol di atas form mengisi jadwal dan durasi otomatis. Setelah diisi, kamu tetap bisa mengubahnya.</p>
+          </div>
+
+          <div>
+            <div class="font-semibold mb-2">Kenapa live bisa berhenti sendiri?</div>
+            <ul class="list-disc pl-5 space-y-1.5 text-muted">
+              <li><b class="text-ink">Video tidak siap untuk live.</b> Timestamp atau bitrate tidak beraturan membuat YouTube memutus. Gunakan file hasil konversi, lihat panduan di Berkas Video.</li>
+              <li><b class="text-ink">Upload internet lambat atau putus-nyambung.</b> Data menumpuk, lalu YouTube menutup koneksi.</li>
+              <li><b class="text-ink">Stream key dipakai di tempat lain.</b> Satu key hanya boleh satu sesi. Hentikan live lain yang memakai key sama.</li>
+              <li><b class="text-ink">Kebijakan YouTube.</b> Konten bisa dihentikan dan dicatat di YouTube Studio.</li>
+            </ul>
+            <p class="text-xs text-muted mt-2">Panel akan mencoba menyambung ulang otomatis hingga 5 kali. Kalau gagal terus, cek pesan di Log tugas, lalu lihat Stream health di YouTube Studio.</p>
+          </div>
+
+          <div class="rounded-lg bg-raised p-3">
+            <div class="font-semibold mb-1">Contoh</div>
+            <p class="text-muted">Mau live setiap hari jam 19.00 selama 2 jam? Isi jadwal mulai besok jam 19.00, pilih auto-stop 2 jam, lalu pengulangan Setiap hari.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card p-6 max-w-2xl">
+        <form @submit.prevent="saveTask()">
+          <!-- Preset: mengisi form otomatis, masih bisa diubah -->
+          <div class="mb-4">
+            <div class="text-xs text-muted mb-2">Pilih cepat</div>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="chip" :class="presetKey === 'manual' && 'on'" @click="applyPreset('manual')">
+                <iconify-icon icon="tabler:hand-click" class="ico"></iconify-icon> Manual
+              </button>
+              <button type="button" class="chip" :class="presetKey === 'nanti' && 'on'" @click="applyPreset('nanti')">
+                <iconify-icon icon="tabler:clock-play" class="ico"></iconify-icon> 10 menit lagi, 2 jam
+              </button>
+              <button type="button" class="chip" :class="presetKey === 'harian' && 'on'" @click="applyPreset('harian')">
+                <iconify-icon icon="tabler:repeat" class="ico"></iconify-icon> Tiap hari
+              </button>
+              <button type="button" class="chip" :class="presetKey === 'mingguan' && 'on'" @click="applyPreset('mingguan')">
+                <iconify-icon icon="tabler:calendar-repeat" class="ico"></iconify-icon> Tiap minggu
+              </button>
+            </div>
+
+            <div x-show="presetKey === 'harian' || presetKey === 'mingguan'" class="mt-3 flex flex-wrap items-end gap-3">
+              <div>
+                <label class="lbl">Jam mulai setiap hari</label>
+                <input class="inp" type="time" x-model="presetTime" @change="applyPreset(presetKey)" />
+              </div>
+              <p class="text-xs text-muted pb-2">Durasi 2 jam bisa diubah di bawah.</p>
+            </div>
+
+            <p x-show="presetKey" class="mt-3 rounded-lg bg-raised p-3 text-xs text-accent" x-text="presetSummary"></p>
+          </div>
+
+          <label class="lbl">Judul tugas (untuk referensi kamu)</label>
+          <input class="inp" maxlength="100" x-model="create.title" required />
+
+          <label class="lbl">Pilih video (.mp4 / .mkv yang sudah diunduh)</label>
+          <select class="inp" x-model="create.fileId" required>
+            <option value="">-- Pilih file video --</option>
+            <template x-for="f in readyFiles" :key="f.id">
+              <option :value="String(f.id)" x-text="f.filename"></option>
+            </template>
+          </select>
+          <p x-show="readyFiles.length === 0" class="text-xs text-warn mt-1">Belum ada file siap. Unduh dulu di Berkas Video.</p>
+
+          <label class="lbl">Stream key YouTube</label>
+          <input class="inp" x-model="create.streamKey" placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off" required />
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="lbl">Jadwal mulai (opsional)</label>
+              <input class="inp" type="datetime-local" x-model="create.startAt" />
+            </div>
+            <div>
+              <label class="lbl">Jadwal stop (opsional)</label>
+              <input class="inp" type="datetime-local" x-model="create.stopAt" />
+            </div>
+          </div>
+          <p class="text-xs text-muted mt-1">Waktu disimpan dalam zona: <span class="text-ink" x-text="tzLabel"></span></p>
+
+          <label class="lbl">Auto-stop setelah durasi (diabaikan kalau jadwal stop diisi)</label>
+          <div class="grid grid-cols-2 gap-4">
+            <select class="inp" x-model.number="create.hours">
+              <template x-for="h in 73" :key="h"><option :value="h - 1" x-text="(h - 1) + ' jam'"></option></template>
+            </select>
+            <select class="inp" x-model.number="create.mins">
+              <template x-for="m in 60" :key="m"><option :value="m - 1" x-text="(m - 1) + ' menit'"></option></template>
+            </select>
+          </div>
+
+          <label class="lbl">Pengulangan jadwal</label>
+          <select class="inp" x-model="create.repeat">
+            <option value="none">Tidak diulang</option>
+            <option value="daily">Setiap hari</option>
+            <option value="weekly">Setiap minggu</option>
+          </select>
+          <p class="text-xs text-muted mt-1">Pengulangan hanya tersedia kalau jadwal mulai dan (jadwal stop atau auto-stop) diatur.</p>
+
+          <button class="btn btn-go" type="submit"><iconify-icon icon="tabler:device-floppy" class="ico"></iconify-icon> Simpan tugas</button>
+          <p x-show="createMsg" x-text="createMsg" class="mt-3 text-sm" :class="createOk ? 'text-ok' : 'text-err'"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- FILES -->
+    <section x-show="view==='files'" x-cloak class="space-y-4">
+      <div>
+        <h1 class="text-xl md:text-2xl font-semibold">Berkas Video</h1>
+        <p class="text-xs text-muted">Unduh video dari Google Drive, lalu pakai di tugas live.</p>
+      </div>
+
+      <!-- Panduan: menyiapkan video untuk live -->
+      <div class="card overflow-hidden" x-data="{ open: false }">
+        <button type="button" class="w-full flex items-center justify-between gap-3 p-4 text-left" @click="open = !open">
+          <span class="flex items-center gap-2">
+            <iconify-icon icon="tabler:video" class="text-lg text-accent"></iconify-icon>
+            <span class="font-semibold">Menyiapkan video agar live stabil</span>
+          </span>
+          <iconify-icon icon="tabler:chevron-down" class="transition" :class="open && 'rotate-180'"></iconify-icon>
+        </button>
+        <div x-show="open" x-collapse class="border-t border-line px-4 pb-4 pt-3 text-sm space-y-5">
+
+          <div>
+            <div class="font-semibold mb-1">Langkah 1: cek resolusi video asli</div>
+            <p class="text-muted mb-2">Jalankan perintah ini di folder video kamu. Ganti <code>input.mp4</code> dengan nama file.</p>
+            <pre class="bg-input border border-line rounded-lg p-3 text-xs whitespace-pre-wrap break-all">ffprobe -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate -of default=nw=1 input.mp4</pre>
+            <p class="text-muted mt-2">Hasilnya menunjukkan <code>width</code> dan <code>height</code>. Pilih profil di bawah yang resolusinya sama.</p>
+          </div>
+
+          <div>
+            <div class="font-semibold mb-2">Langkah 2: pilih profil dan convert</div>
+            <p class="text-muted mb-3">Butuh <b class="text-ink">FFmpeg</b> di komputermu. Hasilnya tetap sama tampilannya dengan video asli, karena resolusi dan rasionya tidak diubah.</p>
+            <div class="space-y-3">
+            <div class="rounded-lg border border-line p-3 space-y-2">
+              <div class="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <div class="font-semibold">720p · 30 fps · 2500 kbps</div>
+                  <div class="text-xs text-muted">Untuk upload sekitar 4 Mbps ke atas. Resolusi sumber harus <b class="text-ink">1280×720</b>.</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-ghost shrink-0" @click="navigator.clipboard.writeText($refs.p720.innerText)">
+                  <iconify-icon icon="tabler:copy" class="ico"></iconify-icon> Salin
+                </button>
+              </div>
+              <pre x-ref="p720" class="bg-input border border-line rounded-lg p-3 text-xs whitespace-pre-wrap break-all">ffmpeg -i input.mp4 -c:v libx264 -preset veryfast -profile:v high -pix_fmt yuv420p -r 30 -b:v 2500k -minrate 2500k -maxrate 2500k -bufsize 5000k -x264-params "nal-hrd=cbr:force-cfr=1" -g 60 -keyint_min 60 -sc_threshold 0 -c:a aac -b:a 128k -ar 48000 -ac 2 -movflags +faststart output-720p.mp4</pre>
+            </div>
+            <div class="rounded-lg border border-line p-3 space-y-2">
+              <div class="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <div class="font-semibold">1080p · 30 fps · 6500 kbps</div>
+                  <div class="text-xs text-muted">Untuk upload sekitar 8 Mbps ke atas. Resolusi sumber harus <b class="text-ink">1920×1080</b>.</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-ghost shrink-0" @click="navigator.clipboard.writeText($refs.p1080.innerText)">
+                  <iconify-icon icon="tabler:copy" class="ico"></iconify-icon> Salin
+                </button>
+              </div>
+              <pre x-ref="p1080" class="bg-input border border-line rounded-lg p-3 text-xs whitespace-pre-wrap break-all">ffmpeg -i input.mp4 -c:v libx264 -preset veryfast -profile:v high -pix_fmt yuv420p -r 30 -b:v 6500k -minrate 6500k -maxrate 6500k -bufsize 13000k -x264-params "nal-hrd=cbr:force-cfr=1" -g 60 -keyint_min 60 -sc_threshold 0 -c:a aac -b:a 128k -ar 48000 -ac 2 -movflags +faststart output-1080p.mp4</pre>
+            </div>
+            <div class="rounded-lg border border-line p-3 space-y-2">
+              <div class="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <div class="font-semibold">4K · 30 fps · 12000 kbps</div>
+                  <div class="text-xs text-muted">Untuk upload sekitar 15 Mbps ke atas. Convert butuh waktu dan CPU lebih besar. Resolusi sumber harus <b class="text-ink">3840×2160</b>.</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-ghost shrink-0" @click="navigator.clipboard.writeText($refs.p4K.innerText)">
+                  <iconify-icon icon="tabler:copy" class="ico"></iconify-icon> Salin
+                </button>
+              </div>
+              <pre x-ref="p4K" class="bg-input border border-line rounded-lg p-3 text-xs whitespace-pre-wrap break-all">ffmpeg -i input.mp4 -c:v libx264 -preset veryfast -profile:v high -pix_fmt yuv420p -r 30 -b:v 12000k -minrate 12000k -maxrate 12000k -bufsize 24000k -x264-params "nal-hrd=cbr:force-cfr=1" -g 60 -keyint_min 60 -sc_threshold 0 -c:a aac -b:a 128k -ar 48000 -ac 2 -movflags +faststart output-4k.mp4</pre>
+            </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="font-semibold mb-1">Langkah 3: cek hasil convert</div>
+            <pre class="bg-input border border-line rounded-lg p-3 text-xs whitespace-pre-wrap break-all">ffprobe -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate,bit_rate -of default=nw=1 output-1080p.mp4</pre>
+            <ul class="list-disc pl-5 space-y-1 text-muted mt-2">
+              <li><code>width</code> dan <code>height</code> sama dengan profil yang dipakai.</li>
+              <li><code>r_frame_rate</code> bernilai <code>30/1</code>.</li>
+              <li><code>bit_rate</code> mendekati target: sekitar 2500000 (720p), 6500000 (1080p), atau 12000000 (4K).</li>
+            </ul>
+            <p class="text-xs text-muted mt-2">Kalau <code>bit_rate</code> tampil <code>N/A</code>, cek bitrate file dengan <code>-show_entries format=bit_rate</code>.</p>
+          </div>
+
+          <div>
+            <div class="font-semibold mb-1">Langkah 4: unggah dan pakai</div>
+            <p class="text-muted">Unggah file hasil convert ke Google Drive, bagikan sebagai "Anyone with the link", lalu unduh di sini. Buat tugas baru dengan file itu. Tugas lama tetap memakai file lama.</p>
+          </div>
+
+          <p class="text-xs text-muted">Setelah live berjalan, cek Stream health di YouTube Studio. Bitrate yang sampai harus mendekati target profil.</p>
+        </div>
+      </div>
+
+      <div class="card p-4 md:p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="h-10 w-10 shrink-0 rounded-lg bg-indigo-500/15 text-indigo-400 flex items-center justify-center">
+            <iconify-icon icon="tabler:cloud-download" class="text-xl"></iconify-icon>
+          </div>
+          <div class="min-w-0">
+            <div class="font-semibold">Unduh dari Google Drive</div>
+            <div class="text-xs text-muted">Pastikan file dibagikan sebagai "Anyone with the link".</div>
+          </div>
+        </div>
+        <form class="flex flex-col sm:flex-row gap-2" @submit.prevent="downloadFile()">
+          <input class="inp flex-1" placeholder="https://drive.google.com/file/d/..." x-model="fileUrl" required />
+          <button class="btn sm:w-auto" type="submit">
+            <iconify-icon icon="tabler:download" class="ico"></iconify-icon> Unduh
+          </button>
+        </form>
+        <p x-show="fileMsg" x-text="fileMsg" class="mt-3 text-sm" :class="fileOk ? 'text-ok' : 'text-err'"></p>
+
+        <div class="mt-4 pt-4 border-t border-line">
+          <div class="flex items-center justify-between text-xs text-muted mb-1.5">
+            <span x-text="'Penyimpanan' + (me ? ' · Paket ' + me.package : '')"></span>
+            <span x-text="bytes(storage.used) + ' / ' + bytes(storage.limit)"></span>
+          </div>
+          <div class="h-1.5 w-full rounded-full bg-raised overflow-hidden">
+            <div class="h-1.5 bg-indigo-500 transition-all" :style="'width:' + storage.pct + '%'"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid gap-3">
+        <template x-for="f in files" :key="f.id">
+          <article class="card p-3 flex gap-3 sm:gap-4 items-center">
+            <div class="relative w-32 sm:w-44 aspect-video shrink-0 rounded-lg overflow-hidden bg-raised">
+              <template x-if="f.has_thumb"><img class="h-full w-full object-cover" :src="thumbUrl(f)" alt="" /></template>
+              <div x-show="!f.has_thumb && f.status !== 'downloading'" class="h-full flex items-center justify-center text-muted">
+                <iconify-icon icon="tabler:movie" class="text-2xl"></iconify-icon>
+              </div>
+              <div x-show="f.status === 'downloading'" class="h-full flex items-center justify-center text-muted">
+                <iconify-icon icon="tabler:loader-2" class="text-2xl animate-spin"></iconify-icon>
+              </div>
+              <button x-show="f.status === 'ready'" class="absolute inset-0 hover:bg-black/30 transition flex items-center justify-center"
+                      @click="openPreview(f)" aria-label="Preview">
+                <span class="opacity-0 hover:opacity-100 h-9 w-9 rounded-full bg-black/60 text-white flex items-center justify-center">
+                  <iconify-icon icon="tabler:player-play-filled"></iconify-icon>
+                </span>
+              </button>
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-2">
+                <div class="font-semibold truncate" x-text="f.filename || f.source_url"></div>
+                <span class="badge shrink-0" :class="fileBadge(f)" x-text="fileLabel(f)"></span>
+              </div>
+              <div class="text-xs text-muted mt-1 flex flex-wrap gap-x-2">
+                <span x-text="f.size_bytes ? bytes(f.size_bytes) : '-'"></span>
+                <span>·</span>
+                <span x-text="fmt(f.created_at)"></span>
+              </div>
+              <p x-show="f.error" class="text-xs text-err mt-1" x-text="f.error"></p>
+              <div class="mt-2 flex gap-2">
+                <button x-show="f.status === 'ready'" class="btn btn-sm btn-ghost" @click="openPreview(f)">
+                  <iconify-icon icon="tabler:eye" class="ico"></iconify-icon> Preview
+                </button>
+                <button class="btn btn-sm btn-danger" @click="delFile(f)">
+                  <iconify-icon icon="tabler:trash" class="ico"></iconify-icon> Hapus
+                </button>
+              </div>
+            </div>
+          </article>
+        </template>
+
+        <div x-show="files.length === 0" class="card p-8 text-center">
+          <iconify-icon icon="tabler:movie-off" class="text-4xl text-muted"></iconify-icon>
+          <p class="mt-2 font-medium">Belum ada video</p>
+          <p class="text-xs text-muted mt-1">Tempel link Google Drive di atas untuk mengunduh video pertama.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ARCHIVE -->
+    <section x-show="view==='archive'" x-cloak>
+      <h1 class="text-2xl font-semibold mb-4">Arsip Live Streaming</h1>
+      <div class="flex gap-3 mb-4 flex-wrap">
+        <button class="btn btn-ghost" @click="clearArchive()"><iconify-icon icon="tabler:trash" class="ico"></iconify-icon> Hapus semua arsip</button>
+        <button class="btn btn-danger" @click="clearErrors()"><iconify-icon icon="tabler:alert-triangle" class="ico"></iconify-icon> Hapus semua tugas error</button>
+      </div>
+      <div class="md:hidden grid gap-3">
+        <template x-for="t in archive" :key="t.id">
+          <div class="card p-4 text-sm">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-semibold truncate" x-text="t.title"></div>
+                <div class="text-xs text-muted truncate" x-text="t.file_name || '-'"></div>
+              </div>
+              <span class="badge shrink-0" :class="'b-' + t.status" x-text="statusLabel(t.status)"></span>
+            </div>
+            <div class="mt-3 flex items-center gap-2 flex-wrap">
+              <code class="text-xs text-ink break-all" x-text="revealed[t.id] || t.key_hint"></code>
+              <button class="btn btn-sm btn-ghost" @click="toggleKey(t)" x-text="revealed[t.id] ? 'Tutup' : 'Lihat'"></button>
+              <button x-show="revealed[t.id]" class="btn btn-sm btn-ghost" :class="copiedId === t.id && 'copied-pop'" @click="copyKey(t)">
+                <iconify-icon class="ico" :icon="copiedId === t.id ? 'tabler:check' : 'tabler:copy'"></iconify-icon>
+                <span x-text="copiedId === t.id ? 'Tersalin' : 'Salin'"></span>
+              </button>
+            </div>
+            <div class="mt-3 text-xs text-muted">
+              <div x-text="'Mulai: ' + fmt(t.started_at)"></div>
+              <div x-text="'Selesai: ' + fmt(t.ended_at)"></div>
+            </div>
+            <div x-show="t.last_error" class="mt-2 text-xs text-err" x-text="t.last_error"></div>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button class="btn btn-sm btn-ghost" @click="showLogs(t)">Log</button>
+              <button class="btn btn-sm" @click="startTask(t)">Ulang</button>
+              <button class="btn btn-sm btn-ghost" @click="reuseTask(t)">Buat tugas</button>
+            </div>
+          </div>
+        </template>
+        <div x-show="archive.length === 0" class="card p-6 text-center text-muted">Tidak ada arsip.</div>
+      </div>
+
+      <div class="hidden md:block card overflow-x-auto">
+        <table class="w-full">
+          <thead><tr><th>Judul</th><th>Video</th><th>Stream key</th><th>Status</th><th>Mulai</th><th>Selesai</th><th>Catatan</th><th>Aksi</th></tr></thead>
+          <tbody class="divide-y divide-line">
+            <template x-for="t in archive" :key="t.id">
+              <tr>
+                <td x-text="t.title"></td>
+                <td x-text="t.file_name || '-'"></td>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <code class="text-xs text-ink break-all" x-text="revealed[t.id] || t.key_hint"></code>
+                    <button class="btn btn-sm btn-ghost" @click="toggleKey(t)" x-text="revealed[t.id] ? 'Tutup' : 'Lihat'"></button>
+                    <button x-show="revealed[t.id]" class="btn btn-sm transition-all duration-300"
+                      :class="copiedId === t.id ? 'bg-green-900 border-green-700 text-green-200 scale-105' : 'btn-ghost'"
+                      @click="copyKey(t)">
+                      <iconify-icon class="ico" :icon="copiedId === t.id ? 'tabler:check' : 'tabler:copy'"></iconify-icon>
+                      <span x-text="copiedId === t.id ? 'Tersalin' : 'Salin'"></span>
+                    </button>
+                  </div>
+                </td>
+                <td><span class="badge" :class="'b-' + t.status" x-text="statusLabel(t.status)"></span></td>
+                <td class="text-xs" x-text="fmt(t.started_at)"></td>
+                <td class="text-xs" x-text="fmt(t.ended_at)"></td>
+                <td class="text-xs text-err max-w-[200px]" x-text="t.last_error || ''"></td>
+                <td>
+                  <div class="flex flex-wrap gap-1">
+                    <button class="btn btn-sm btn-ghost" @click="showLogs(t)"><iconify-icon icon="tabler:file-text" class="ico"></iconify-icon> Log</button>
+                    <button class="btn btn-sm" @click="startTask(t)"><iconify-icon icon="tabler:refresh" class="ico"></iconify-icon> Ulang</button>
+                    <button class="btn btn-sm btn-ghost" @click="reuseTask(t)"><iconify-icon icon="tabler:copy-plus" class="ico"></iconify-icon> Buat tugas</button>
+                  </div>
+                </td>
+              </tr>
+            </template>
+            <tr x-show="archive.length === 0"><td colspan="8" class="text-center text-muted p-6">Tidak ada arsip.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section x-show="view==='settings'" x-cloak>
+      <h1 class="text-2xl font-semibold mb-4">Pengaturan</h1>
+      <div class="grid lg:grid-cols-2 gap-5 max-w-5xl">
+        <div class="card p-5">
+          <h3 class="font-semibold">Ubah sandi</h3>
+          <div x-show="me && me.must_change_password" class="mt-3 rounded-lg border border-warn-line bg-warn-soft p-3 text-sm text-warn">
+            Sandi kamu masih sandi awal. Silakan ganti dulu.
+          </div>
+          <form @submit.prevent="changePw()">
+            <label class="lbl">Sandi lama</label>
+            <input class="inp" type="password" x-model="pw.old" required />
+            <label class="lbl">Sandi baru (minimal 8 karakter)</label>
+            <input class="inp" type="password" minlength="8" x-model="pw.n1" required />
+            <label class="lbl">Ulangi sandi baru</label>
+            <input class="inp" type="password" minlength="8" x-model="pw.n2" required />
+            <button class="btn btn-go" type="submit"><iconify-icon icon="tabler:key" class="ico"></iconify-icon> Ubah sandi</button>
+            <p x-show="pwMsg" x-text="pwMsg" class="mt-3 text-sm" :class="pwOk ? 'text-ok' : 'text-err'"></p>
+          </form>
+        </div>
+
+        <div class="card p-5">
+          <h3 class="font-semibold">Zona waktu</h3>
+          <label class="lbl">Pilih zona waktu</label>
+          <select class="inp" x-model="tzDraft">
+            <template x-for="z in tzOptions" :key="z.value">
+              <option :value="z.value" x-text="z.label"></option>
+            </template>
+          </select>
+          <label class="lbl">Preview waktu sekarang</label>
+          <div class="inp" x-text="previewTz"></div>
+          <button class="btn btn-go" @click="saveTz()"><iconify-icon icon="tabler:device-floppy" class="ico"></iconify-icon> Simpan zona waktu</button>
+          <p x-show="tzMsg" x-text="tzMsg" class="mt-3 text-sm" :class="tzOk ? 'text-ok' : 'text-err'"></p>
+        </div>
+
+        <div class="card p-5 lg:col-span-2">
+          <strong>Masa aktif</strong>
+          <p class="text-sm text-muted mt-1" x-text="me ? 'Berlaku sampai ' + fmt(me.expires_at) + ' (sisa ' + remain(me.remaining_sec) + ')' : ''"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL EDIT TUGAS -->
+<div x-show="editTask" x-cloak class="fixed inset-0 z-50 bg-black/60 flex items-end md:items-center justify-center" @click.self="closeEdit()">
+  <div class="card w-full md:max-w-xl max-h-[92vh] overflow-y-auto rounded-b-none md:rounded-2xl p-5">
+    <div class="flex items-center justify-between mb-1">
+      <h3 class="text-lg font-semibold">Edit tugas</h3>
+      <button class="btn btn-sm btn-ghost" @click="closeEdit()"><iconify-icon icon="tabler:x"></iconify-icon></button>
+    </div>
+    <p class="text-xs text-muted mb-2">Tugas yang sedang live tidak bisa diubah. Kosongkan stream key kalau tidak ingin diganti.</p>
+    <form @submit.prevent="saveEdit()">
+      <label class="lbl">Judul</label>
+      <input class="inp" maxlength="100" x-model="editForm.title" required />
+
+      <label class="lbl">Video</label>
+      <select class="inp" x-model="editForm.fileId" required>
+        <template x-for="f in readyFiles" :key="f.id">
+          <option :value="String(f.id)" x-text="f.filename"></option>
+        </template>
+      </select>
+
+      <label class="lbl">Stream key baru (opsional)</label>
+      <input class="inp" x-model="editForm.streamKey" placeholder="Kosongkan jika tidak diganti" autocomplete="off" />
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="lbl">Jadwal mulai</label>
+          <input class="inp" type="datetime-local" x-model="editForm.startAt" />
+        </div>
+        <div>
+          <label class="lbl">Jadwal stop</label>
+          <input class="inp" type="datetime-local" x-model="editForm.stopAt" />
+        </div>
+      </div>
+
+      <label class="lbl">Auto-stop (diabaikan kalau jadwal stop diisi)</label>
+      <div class="grid grid-cols-2 gap-4">
+        <select class="inp" x-model.number="editForm.hours">
+          <template x-for="h in 73" :key="h"><option :value="h - 1" x-text="(h - 1) + ' jam'"></option></template>
+        </select>
+        <select class="inp" x-model.number="editForm.mins">
+          <template x-for="m in 60" :key="m"><option :value="m - 1" x-text="(m - 1) + ' menit'"></option></template>
+        </select>
+      </div>
+
+      <label class="lbl">Pengulangan</label>
+      <select class="inp" x-model="editForm.repeat">
+        <option value="none">Tidak diulang</option>
+        <option value="daily">Setiap hari</option>
+        <option value="weekly">Setiap minggu</option>
+      </select>
+
+      <p x-show="editMsg" x-text="editMsg" class="mt-3 text-sm text-err"></p>
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <button type="button" class="btn btn-ghost justify-center" @click="closeEdit()">Batal</button>
+        <button type="submit" class="btn justify-center">Simpan perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL LOG (global, bisa dibuka dari halaman mana pun) -->
+<div x-show="logsFor" x-cloak class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="logsFor = null">
+  <div class="card w-full max-w-3xl p-5">
+    <div class="flex justify-between items-center mb-3">
+      <strong x-text="logsFor ? 'Log: ' + logsFor.title : ''"></strong>
+      <button class="btn btn-sm btn-ghost" @click="logsFor = null"><iconify-icon icon="tabler:x" class="ico"></iconify-icon> Tutup</button>
+    </div>
+    <pre class="bg-input border border-line rounded-lg p-3 text-xs max-h-[60vh] overflow-auto whitespace-pre-wrap text-muted" x-text="logsText"></pre>
+  </div>
+</div>
+
+<!-- MODAL PREVIEW VIDEO -->
+<div x-show="preview" x-cloak class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" @click.self="closePreview()">
+  <div class="card w-full max-w-3xl p-4">
+    <div class="flex justify-between items-center mb-3">
+      <strong class="truncate" x-text="preview ? preview.filename : ''"></strong>
+      <button class="btn btn-sm btn-ghost" @click="closePreview()"><iconify-icon icon="tabler:x" class="ico"></iconify-icon> Tutup</button>
+    </div>
+    <video class="w-full rounded-lg bg-black" controls preload="metadata"
+           :src="preview ? streamUrl(preview) : ''"></video>
+  </div>
+</div>
+
+<script src="/js/util.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/mixins/auth.js"></script>
+<script src="/js/mixins/tasks.js"></script>
+<script src="/js/mixins/files.js"></script>
+<script src="/js/mixins/archive.js"></script>
+<script src="/js/mixins/settings.js"></script>
+<script src="/js/app.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</body>
+</html>

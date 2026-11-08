@@ -1,0 +1,18 @@
+# Ganti DOMAIN dengan domain kamu, misalnya live.namadomain.com
+# Caddy mengurus HTTPS (Let's Encrypt) otomatis.
+{$DOMAIN} {
+  encode gzip
+
+  # flush_interval -1 wajib untuk SSE (/api/stream), supaya event tidak ditahan buffer
+  reverse_proxy 127.0.0.1:3000 {
+    flush_interval -1
+  }
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "same-origin"
+    -Server
+  }
+}

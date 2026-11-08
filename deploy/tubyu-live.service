@@ -1,0 +1,22 @@
+# Salin ke /etc/systemd/system/tubyu-live.service
+# Sesuaikan User, WorkingDirectory, dan path node (cek dengan: which node)
+[Unit]
+Description=Tubyu Live Panel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tubyu
+WorkingDirectory=/opt/tubyu-live
+EnvironmentFile=/opt/tubyu-live/.env
+ExecStart=/usr/bin/node --no-warnings src/server.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/tubyu-live/data /opt/tubyu-live/storage
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

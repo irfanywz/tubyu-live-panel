@@ -1,0 +1,213 @@
+/* Tema terang dan gelap. Warna diambil dari CSS variable, jadi toggle cukup ganti data-theme di <html>. */
+[x-cloak] { display: none !important; }
+
+:root, [data-theme="dark"] {
+  --c-app: 11 13 20;
+  --c-surface: 20 24 36;
+  --c-raised: 27 32 48;
+  --c-input: 15 18 27;
+  --c-line: 38 44 61;
+  --c-ink: 230 233 242;
+  --c-muted: 139 147 167;
+  --c-danger-bg: 59 26 31;
+  --c-danger-ink: 252 165 165;
+  --c-danger-line: 107 38 48;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --c-app: 244 246 251;
+  --c-surface: 255 255 255;
+  --c-raised: 238 241 247;
+  --c-input: 255 255 255;
+  --c-line: 221 226 236;
+  --c-ink: 27 34 51;
+  --c-muted: 91 100 120;
+  --c-danger-bg: 254 226 226;
+  --c-danger-ink: 185 28 28;
+  --c-danger-line: 252 165 165;
+  color-scheme: light;
+}
+
+body {
+  background: rgb(var(--c-app));
+  color: rgb(var(--c-ink));
+  transition: background-color .2s, color .2s;
+}
+
+.card {
+  background: rgb(var(--c-surface));
+  border: 1px solid rgb(var(--c-line));
+  border-radius: 14px;
+}
+
+.inp {
+  width: 100%;
+  background: rgb(var(--c-input));
+  color: rgb(var(--c-ink));
+  border: 1px solid rgb(var(--c-line));
+  border-radius: 8px;
+  padding: 9px 10px;
+}
+.inp:focus { outline: none; border-color: #6d5efc; }
+.inp::placeholder { color: rgb(var(--c-muted)); opacity: .8; }
+
+/* Ikon kalender ikut warna tema. Tanpa ini ikonnya hitam di dark mode. */
+input[type="datetime-local"], input[type="date"], input[type="time"] { color-scheme: inherit; }
+
+.lbl { display: block; font-size: 13px; color: rgb(var(--c-muted)); margin: 14px 0 6px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #6d5efc;
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter .15s;
+}
+.btn iconify-icon { display: block; flex-shrink: 0; }
+.btn:hover { filter: brightness(1.1); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-ghost { background: rgb(var(--c-raised)); border-color: rgb(var(--c-line)); color: rgb(var(--c-ink)); }
+.btn-danger { background: rgb(var(--c-danger-bg)); color: rgb(var(--c-danger-ink)); border-color: rgb(var(--c-danger-line)); }
+.btn-warn { background: #3a2e12; color: #fcd34d; border-color: #5a4716; }
+[data-theme="light"] .btn-warn { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+.btn-go { width: 100%; padding: 12px; font-weight: 700; margin-top: 18px; background: linear-gradient(90deg, #6d5efc, #e04f9b); }
+.btn-sm { padding: 5px 9px; font-size: 13px; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+.b-live, .b-failed, .b-bad { background: #3b1a1f; color: #fca5a5; }
+.b-scheduled, .b-warn { background: #3a2e12; color: #fcd34d; }
+.b-idle { background: #1e2a3a; color: #93c5fd; }
+.b-finished, .b-ok { background: #12301e; color: #86efac; }
+.b-stopped, .b-off { background: #2a2233; color: #d8b4fe; }
+[data-theme="light"] .b-live, [data-theme="light"] .b-failed, [data-theme="light"] .b-bad { background: #fee2e2; color: #b91c1c; }
+[data-theme="light"] .b-scheduled, [data-theme="light"] .b-warn { background: #fef3c7; color: #92400e; }
+[data-theme="light"] .b-idle { background: #dbeafe; color: #1e40af; }
+[data-theme="light"] .b-finished, [data-theme="light"] .b-ok { background: #dcfce7; color: #166534; }
+[data-theme="light"] .b-stopped, [data-theme="light"] .b-off { background: #f3e8ff; color: #6b21a8; }
+
+.nav, .nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgb(var(--c-raised));
+  border: 1px solid transparent;
+  color: rgb(var(--c-ink));
+  font-size: 14px;
+  white-space: nowrap;
+}
+.nav:hover, .nav-btn:hover { border-color: rgb(var(--c-line)); }
+.nav.on, .nav-btn.on { border-color: #22d3ee; }
+
+.chip {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: rgb(var(--c-raised));
+  border: 1px solid rgb(var(--c-line));
+  color: rgb(var(--c-muted));
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chip.on { background: rgba(109, 94, 252, .15); border-color: #6d5efc; color: rgb(var(--c-ink)); }
+
+.action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 4px;
+  color: rgb(var(--c-muted));
+}
+.action:hover { color: rgb(var(--c-ink)); background: rgb(var(--c-raised)); }
+.action iconify-icon { font-size: 16px; }
+
+.mnav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 2px;
+  font-size: 10px;
+  line-height: 1.15;
+  text-align: center;
+  color: rgb(var(--c-muted));
+  min-height: 58px;
+}
+.mnav.on, .mnav.on iconify-icon { color: #22d3ee; }
+
+.ico { display: inline-block; vertical-align: -0.15em; font-size: 1.05em; }
+
+.thumb { width: 112px; height: 63px; object-fit: cover; border-radius: 8px; background: rgb(var(--c-raised)); }
+.thumb-empty {
+  width: 112px; height: 63px; border-radius: 8px;
+  background: rgb(var(--c-raised));
+  display: flex; align-items: center; justify-content: center;
+  color: rgb(var(--c-muted)); font-size: 11px;
+}
+
+th { text-align: left; font-size: 12px; color: rgb(var(--c-muted)); text-transform: uppercase; padding: 10px 12px; white-space: nowrap; }
+td { padding: 10px 12px; font-size: 14px; vertical-align: middle; }
+
+/* ---------- Warna semantik (aman di light dan dark) ---------- */
+.text-err { color: #f87171; }
+[data-theme="light"] .text-err { color: #b91c1c; }
+.text-ok { color: #4ade80; }
+[data-theme="light"] .text-ok { color: #15803d; }
+.text-warn { color: #fcd34d; }
+[data-theme="light"] .text-warn { color: #b45309; }
+.text-accent { color: #a5b4fc; }
+[data-theme="light"] .text-accent { color: #4338ca; }
+.text-accent-ink { color: #e0e7ff; }
+[data-theme="light"] .text-accent-ink { color: #3730a3; }
+.text-info { color: #7dd3fc; }
+[data-theme="light"] .text-info { color: #0369a1; }
+
+.bg-accent-soft { background: rgba(79, 70, 229, .25); }
+[data-theme="light"] .bg-accent-soft { background: #e0e7ff; }
+.bg-ok-soft { background: rgba(20, 83, 45, .4); }
+[data-theme="light"] .bg-ok-soft { background: #dcfce7; }
+.bg-err-soft { background: rgba(127, 29, 29, .4); }
+[data-theme="light"] .bg-err-soft { background: #fee2e2; }
+.bg-warn-soft { background: rgba(120, 53, 15, .4); }
+[data-theme="light"] .bg-warn-soft { background: #fef3c7; }
+
+.border-ok-line { border-color: #166534; }
+[data-theme="light"] .border-ok-line { border-color: #86efac; }
+.border-err-line { border-color: #7f1d1d; }
+[data-theme="light"] .border-err-line { border-color: #fca5a5; }
+.border-warn-line { border-color: #92400e; }
+[data-theme="light"] .border-warn-line { border-color: #fcd34d; }
+
+/* ---------- Animasi login ---------- */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+.shake { animation: shake .45s; }
+.btn:disabled { cursor: wait; }
+
+/* Animasi tombol salin: ikon membesar sebentar lalu berubah hijau */
+@keyframes copy-pop {
+  0% { transform: scale(.85); }
+  55% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.copied-pop { animation: copy-pop .35s ease-out; color: #4ade80 !important; }
+[data-theme="light"] .copied-pop { color: #15803d !important; }
