@@ -47,6 +47,30 @@ const filesMixin = {
     }
   },
 
+  // Persentase unduhan, null kalau ukuran total belum diketahui
+  downloadPct(f) {
+    if (!f.total_bytes) return null;
+    return Math.min(100, Math.round((f.progress_bytes / f.total_bytes) * 100));
+  },
+
+  downloadPctText(f) {
+    const p = this.downloadPct(f);
+    return p === null ? '' : p + '%';
+  },
+
+  downloadText(f) {
+    const done = Util.bytes(f.progress_bytes || 0);
+    return f.total_bytes ? `${done} dari ${Util.bytes(f.total_bytes)}` : `${done} diterima`;
+  },
+
+  async cancelDownload(f) {
+    if (!confirm('Batalkan unduhan ini?')) return;
+    try {
+      await api(`/api/files/${f.id}/cancel`, { method: 'POST' });
+      await this.loadFiles();
+    } catch (e) { alert(e.message); }
+  },
+
   async delFile(f) {
     if (!confirm('Hapus file ini dari server?')) return;
     try {

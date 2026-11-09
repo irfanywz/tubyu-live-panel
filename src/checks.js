@@ -28,7 +28,7 @@ function checkFfmpeg() {
   const r = spawnSync(config.ffmpegPath, ['-version'], { encoding: 'utf8', windowsHide: true });
   if (r.error || r.status !== 0) {
     return { ok: false, detail: `tidak bisa dijalankan: ${config.ffmpegPath}`,
-      hint: 'Jalankan npm install ulang (ffmpeg-static), atau isi FFMPEG_PATH di .env.' };
+      hint: 'Jalankan: npm rebuild ffmpeg-static. Kalau npm masih memblokir, isi FFMPEG_PATH di .env ke FFmpeg yang sudah terpasang.' };
   }
   const first = (r.stdout || '').split('\n')[0] || '';
   const version = first.replace(/^ffmpeg version\s+/, '').split(' ')[0];

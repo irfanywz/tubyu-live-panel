@@ -164,7 +164,9 @@ export function launchTask(taskId, { resume = false } = {}) {
     // Putus tanpa diminta: coba sambung ulang dulu
     if (!entry.stopReason && !entry.errorMessage && scheduleReconnect(taskId, code, entry)) return;
 
-    const status = entry.stopReason || 'failed';
+    const latest = loadTask(taskId);
+    const pastStop = !!(latest && latest.stop_at_utc && new Date(latest.stop_at_utc) <= new Date());
+    const status = entry.stopReason || (pastStop ? 'finished' : 'failed');
     let lastError = null;
     if (entry.errorMessage) lastError = entry.errorMessage;
     else if (status === 'failed') {
@@ -206,6 +208,21 @@ function scheduleReconnect(taskId, code, entry) {
     try {
       const cur = loadTask(taskId);
       if (!cur || cur.status !== 'live' || isRunning(taskId)) return;
+      // Jadwal stop bisa sudah lewat selama menunggu. Jangan nyalakan lagi.
+      if (cur.stop_at_utc && new Date(cur.stop_at_utc) <= new Date()) {
+        db.prepare("UPDATE tasks SET status = 'finished', pid = NULL, ended_at = ?, last_error = NULL WHERE id = ?")
+          .run(now(), taskId);
+        retryState.delete(taskId);
+        addLog(taskId, 'Sambung ulang dibatalkan: jadwal stop sudah tercapai');
+        return;
+      }
+      if (new Date(cur.user_expires_at) <= new Date()) {
+        db.prepare("UPDATE tasks SET status = 'stopped', pid = NULL, ended_at = ?, last_error = 'Masa aktif habis' WHERE id = ?")
+          .run(now(), taskId);
+        retryState.delete(taskId);
+        addLog(taskId, 'Sambung ulang dibatalkan: masa aktif habis');
+        return;
+      }
       launchTask(taskId, { resume: true });
       addLog(taskId, `Tersambung kembali (percobaan ${attempts})`);
     } catch (err) {

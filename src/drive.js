@@ -49,19 +49,26 @@ function parseFilename(disposition) {
 const sanitize = (name) => name.replace(/[^\w.\- ]+/g, '_').slice(0, 150);
 const tooBig = () => new Error('Ukuran file melebihi sisa kuota storage');
 
-export async function downloadDrive(fileId, destPath, maxBytes) {
+const cancelled = () => Object.assign(new Error('CANCELLED'), { cancelled: true });
+
+export async function downloadDrive(fileId, destPath, maxBytes, opts = {}) {
+  const { onProgress, isCancelled } = opts;
   const res = await fetchDrive(fileId);
 
   const declared = Number(res.headers.get('content-length') || 0);
   if (declared > maxBytes) throw tooBig();
+  if (isCancelled && isCancelled()) throw cancelled();
 
   const filename = sanitize(parseFilename(res.headers.get('content-disposition')) || `${fileId}.mp4`);
 
   let size = 0;
   const body = Readable.fromWeb(res.body);
+  if (onProgress) onProgress(0, declared);
   body.on('data', (chunk) => {
     size += chunk.length;
     if (size > maxBytes) body.destroy(tooBig());
+    if (isCancelled && isCancelled()) body.destroy(cancelled());
+    if (onProgress) onProgress(size, declared);
   });
 
   await pipeline(body, fs.createWriteStream(destPath));

@@ -11,7 +11,7 @@ import {
   checkPassword, hashPassword, createSession, destroySession,
   setSessionCookie, clearSessionCookie, requireAuth, requireAdmin, isExpired,
 } from './auth.js';
-import { queueDownload, deleteFile, usedBytes, httpError } from './files.js';
+import { queueDownload, deleteFile, usedBytes, httpError, cancelDownload } from './files.js';
 import { launchTask, stopTask, addLog, isRunning, recoverOnBoot, getStats, stopAll, liveUploadKbps, liveCount } from './runner.js';
 import { runChecks } from './checks.js';
 import { checkQuota, limitsFor } from './limits.js';
@@ -119,7 +119,7 @@ app.post('/api/password', requireAuth, wrap((req, res) => {
 // ---------- FILES ----------
 app.get('/api/files', requireAuth, (req, res) => {
   const rows = db.prepare(
-    'SELECT id, filename, size_bytes, status, error, source_url, created_at, thumb_path FROM files WHERE user_id = ? ORDER BY id DESC'
+    'SELECT id, filename, size_bytes, status, error, source_url, created_at, thumb_path, progress_bytes, total_bytes FROM files WHERE user_id = ? ORDER BY id DESC'
   ).all(req.user.id).map(({ thumb_path, ...r }) => ({ ...r, has_thumb: !!thumb_path }));
   res.json(rows);
 });
@@ -127,6 +127,13 @@ app.get('/api/files', requireAuth, (req, res) => {
 app.post('/api/files', requireAuth, wrap((req, res) => {
   const id = queueDownload(req.user, String(req.body?.url || ''));
   res.status(202).json({ id });
+}));
+
+app.post('/api/files/:id/cancel', requireAuth, wrap((req, res) => {
+  const file = db.prepare('SELECT * FROM files WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!file) throw httpError(404, 'File tidak ditemukan');
+  cancelDownload(file);
+  res.json({ ok: true });
 }));
 
 app.delete('/api/files/:id', requireAuth, wrap((req, res) => {
@@ -681,5 +688,5 @@ startBandwidthFlush();
 startScheduler(config.tickMs);
 
 app.listen(config.port, config.host, () => {
-  console.log(`StreamFlow MVP jalan di http://${config.host}:${config.port}`);
+  console.log(`Tubyu Live Panel jalan di http://${config.host}:${config.port}`);
 });

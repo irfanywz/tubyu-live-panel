@@ -380,7 +380,7 @@
           <p x-show="readyFiles.length === 0" class="text-xs text-warn mt-1">Belum ada file siap. Unduh dulu di Berkas Video.</p>
 
           <label class="lbl">Stream key YouTube</label>
-          <input class="inp" x-model="create.streamKey" placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off" required />
+          <div class="relative flex-1 min-w-0"><input class="inp w-full pr-24" x-model="create.streamKey" placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off" required /><button type="button" class="btn btn-sm btn-ghost absolute right-1.5 top-1/2 -translate-y-1/2" @click="paste('create.streamKey')" aria-label="Tempel"><iconify-icon icon="tabler:clipboard" class="ico"></iconify-icon> Tempel</button></div>
 
           <div class="grid md:grid-cols-2 gap-4">
             <div>
@@ -517,7 +517,7 @@
           </div>
         </div>
         <form class="flex flex-col sm:flex-row gap-2" @submit.prevent="downloadFile()">
-          <input class="inp flex-1" placeholder="https://drive.google.com/file/d/..." x-model="fileUrl" required />
+          <div class="relative flex-1 min-w-0"><input class="inp w-full pr-24" placeholder="https://drive.google.com/file/d/..." x-model="fileUrl" required /><button type="button" class="btn btn-sm btn-ghost absolute right-1.5 top-1/2 -translate-y-1/2" @click="paste('fileUrl')" aria-label="Tempel"><iconify-icon icon="tabler:clipboard" class="ico"></iconify-icon> Tempel</button></div>
           <button class="btn sm:w-auto" type="submit">
             <iconify-icon icon="tabler:download" class="ico"></iconify-icon> Unduh
           </button>
@@ -564,12 +564,26 @@
                 <span>·</span>
                 <span x-text="fmt(f.created_at)"></span>
               </div>
+              <div x-show="f.status === 'downloading'" class="mt-2">
+                <div class="flex items-center justify-between text-xs text-muted mb-1">
+                  <span x-text="downloadText(f)"></span>
+                  <span x-text="downloadPctText(f)"></span>
+                </div>
+                <div class="h-1.5 w-full rounded-full bg-raised overflow-hidden">
+                  <div class="h-1.5 bg-indigo-500 transition-all duration-500"
+                       :class="downloadPct(f) === null && 'animate-pulse'"
+                       :style="'width:' + (downloadPct(f) === null ? 100 : downloadPct(f)) + '%'"></div>
+                </div>
+              </div>
               <p x-show="f.error" class="text-xs text-err mt-1" x-text="f.error"></p>
               <div class="mt-2 flex gap-2">
                 <button x-show="f.status === 'ready'" class="btn btn-sm btn-ghost" @click="openPreview(f)">
                   <iconify-icon icon="tabler:eye" class="ico"></iconify-icon> Preview
                 </button>
-                <button class="btn btn-sm btn-danger" @click="delFile(f)">
+                <button x-show="f.status === 'downloading'" class="btn btn-sm btn-ghost" @click="cancelDownload(f)">
+                  <iconify-icon icon="tabler:x" class="ico"></iconify-icon> Batal
+                </button>
+                <button x-show="f.status !== 'downloading'" class="btn btn-sm btn-danger" @click="delFile(f)">
                   <iconify-icon icon="tabler:trash" class="ico"></iconify-icon> Hapus
                 </button>
               </div>
@@ -728,7 +742,7 @@
       </select>
 
       <label class="lbl">Stream key baru (opsional)</label>
-      <input class="inp" x-model="editForm.streamKey" placeholder="Kosongkan jika tidak diganti" autocomplete="off" />
+      <div class="relative flex-1 min-w-0"><input class="inp w-full pr-24" x-model="editForm.streamKey" placeholder="Kosongkan jika tidak diganti" autocomplete="off" /><button type="button" class="btn btn-sm btn-ghost absolute right-1.5 top-1/2 -translate-y-1/2" @click="paste('editForm.streamKey')" aria-label="Tempel"><iconify-icon icon="tabler:clipboard" class="ico"></iconify-icon> Tempel</button></div>
 
       <div class="grid md:grid-cols-2 gap-4">
         <div>

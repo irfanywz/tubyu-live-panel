@@ -2,6 +2,32 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [0.14.1]
+
+### Diperbaiki
+- Pesan di terminal saat server dan setup berjalan memakai nama Tubyu Live Panel.
+
+## [0.14.0]
+
+### Ditambahkan
+- Progres unduhan video: byte yang sudah diterima dan persentase, diperbarui tiap detik.
+- Tombol Batal untuk unduhan yang sedang berjalan. Berkas yang dibatalkan tidak tercatat sebagai gagal.
+
+### Diperbaiki
+- Kolom link Google Drive kembali memanjang penuh. Tombol Tempel sekarang berada di dalam input, di sisi kanan.
+
+## [0.13.1]
+
+### Diubah
+- `npm run setup` mengecek binary FFmpeg bawaan. Kalau belum ada, setup mengizinkan skrip `ffmpeg-static` lalu menjalankan `npm rebuild ffmpeg-static`. Kalau tetap gagal, setup memberi petunjuk memakai `FFMPEG_PATH`.
+
+## [0.13.0]
+
+### Diperbaiki
+- Sambung ulang tidak lagi menyalakan FFmpeg kalau jadwal stop sudah tercapai atau masa aktif sudah habis selama menunggu. Kalau FFmpeg berhenti setelah jadwal stop lewat, tugas ditandai selesai, bukan gagal.
+- Tombol Tempel di kolom stream key dan link Google Drive.
+- `ffmpeg-static` menjadi optional dependency. Kalau binary-nya tidak terpasang (misalnya karena npm memblokir skrip install), panel memakai FFmpeg dari `FFMPEG_PATH` dan pemeriksaan memberi petunjuk.
+
 ## [0.12.3]
 
 ### Diperbaiki

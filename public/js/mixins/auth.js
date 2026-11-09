@@ -105,6 +105,19 @@ const authMixin = {
     }
   },
 
+  // Tempel dari clipboard ke field (path seperti "create.streamKey" atau "fileUrl")
+  async paste(path) {
+    try {
+      const text = (await navigator.clipboard.readText()).trim();
+      const keys = path.split('.');
+      const last = keys.pop();
+      const target = keys.reduce((o, k) => o[k], this);
+      target[last] = text;
+    } catch (e) {
+      alert('Tidak bisa membaca clipboard. Tekan Ctrl+V di kolom tersebut.');
+    }
+  },
+
   async logout() {
     this.closeStream();
     await api('/api/logout', { method: 'POST' }).catch(() => {});

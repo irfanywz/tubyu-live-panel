@@ -106,3 +106,5 @@ CREATE TABLE IF NOT EXISTS usage_customer_daily (
   PRIMARY KEY (day, user_id)
 );
 `);
+ensureColumn('files', 'progress_bytes', 'INTEGER NOT NULL DEFAULT 0');
+ensureColumn('files', 'total_bytes', 'INTEGER NOT NULL DEFAULT 0');

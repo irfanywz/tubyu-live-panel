@@ -6,8 +6,14 @@ import { config } from './config.js';
 import { parseDriveId, downloadDrive } from './drive.js';
 
 const ALLOWED_EXT = ['.mp4', '.mkv'];
+const cancelRequests = new Set();
 
 export const httpError = (status, message) => Object.assign(new Error(message), { status });
+
+export function cancelDownload(file) {
+  if (file.status !== 'downloading') throw httpError(400, 'Unduhan sudah selesai');
+  cancelRequests.add(file.id);
+}
 
 export function usedBytes(userId) {
   return db.prepare(
@@ -52,8 +58,18 @@ async function processDownload(fileId, userId, gdriveId, maxBytes) {
   for (const d of [videoDir, thumbDir, tmpDir]) fs.mkdirSync(d, { recursive: true });
   const tmpPath = path.join(tmpDir, `${fileId}.part`);
 
+  // Progres ditulis ke database paling sering tiap detik
+  let lastWrite = 0;
+  const onProgress = (done, total) => {
+    const t = Date.now();
+    if (t - lastWrite < 1000 && done !== total) return;
+    lastWrite = t;
+    db.prepare('UPDATE files SET progress_bytes = ?, total_bytes = ? WHERE id = ?').run(done, total || 0, fileId);
+  };
+  const isCancelled = () => cancelRequests.has(fileId);
+
   try {
-    const { filename, size } = await downloadDrive(gdriveId, tmpPath, maxBytes);
+    const { filename, size } = await downloadDrive(gdriveId, tmpPath, maxBytes, { onProgress, isCancelled });
     const ext = path.extname(filename).toLowerCase();
     if (!ALLOWED_EXT.includes(ext)) throw new Error('Format file harus .mp4 atau .mkv');
 
@@ -67,6 +83,12 @@ async function processDownload(fileId, userId, gdriveId, maxBytes) {
       .run(filename, finalPath, size, hasThumb ? thumbPath : null, fileId);
   } catch (err) {
     fs.rmSync(tmpPath, { force: true });
+    cancelRequests.delete(fileId);
+    if (err.cancelled) {
+      // Dibatalkan pengguna: catatannya dihapus, tidak dihitung sebagai gagal
+      db.prepare('DELETE FROM files WHERE id = ?').run(fileId);
+      return;
+    }
     db.prepare("UPDATE files SET status = 'failed', error = ? WHERE id = ?").run(err.message, fileId);
   }
 }

@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -9,8 +10,9 @@ const require = createRequire(import.meta.url);
 function resolveFfmpeg() {
   if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
   try {
+    // Binary harus benar-benar ada. Kalau npm memblokir skrip install, file tidak akan ada.
     const bundled = require('ffmpeg-static');
-    if (bundled) return bundled;
+    if (bundled && fs.existsSync(bundled)) return bundled;
   } catch { /* belum npm install */ }
   return 'ffmpeg';
 }
