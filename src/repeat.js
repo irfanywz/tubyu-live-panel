@@ -42,10 +42,10 @@ export function spawnRepeats(nowMs) {
 
     const info = db.prepare(`
       INSERT INTO tasks (user_id, title, file_id, stream_key_enc, key_hint,
-                         scheduled_start_utc, stop_at_utc, duration_sec, status, repeat_rule, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', ?, ?)
+                         scheduled_start_utc, stop_at_utc, duration_sec, status, repeat_rule, created_at, key_hash)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?)
     `).run(t.user_id, t.title, t.file_id, t.stream_key_enc, t.key_hint,
-      new Date(nextStart).toISOString(), nextStop, t.duration_sec, t.repeat_rule, new Date().toISOString());
+      new Date(nextStart).toISOString(), nextStop, t.duration_sec, t.repeat_rule, new Date().toISOString(), t.key_hash);
 
     addLog(Number(info.lastInsertRowid), `Pengulangan ${t.repeat_rule} dari tugas #${t.id}`);
   }

@@ -2,6 +2,18 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [0.15.0]
+
+### Ditambahkan
+- Satu stream key hanya boleh dipakai satu tugas aktif (manual, terjadwal, atau live). Pengecekan dilakukan saat buat, ubah, dan mulai ulang tugas. Dibandingkan lewat sidik jari HMAC, tanpa menyimpan key dalam bentuk teks.
+- Live tidak bisa dimulai kalau key yang sama sedang live di tugas lain.
+- Peringatan di log saat panel tidak dijalankan sebagai service systemd.
+
+## [0.14.3]
+
+### Diperbaiki
+- Saat panel dijalankan, FFmpeg sisa dari run sebelumnya (yang masih memakai stream key) dihentikan dulu. Ini mencegah stream macet atau loading karena dua proses memakai key yang sama. Hanya berlaku di Linux.
+
 ## [0.14.2]
 
 ### Diubah

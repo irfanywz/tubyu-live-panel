@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { spawn } from 'node:child_process';
 import { config } from './config.js';
 import { db } from './db.js';
@@ -91,6 +92,11 @@ export function launchTask(taskId, { resume = false } = {}) {
   if (new Date(task.user_expires_at) <= new Date()) throw httpError(403, 'Masa aktif habis');
   if (task.file_status !== 'ready') throw httpError(400, 'File video belum siap');
   checkQuota({ userId: task.user_id, pkg: task.user_package, excludeId: taskId, goLive: true });
+  // Key yang sama tidak boleh sedang live di tugas lain
+  if (task.key_hash) {
+    const dup = db.prepare("SELECT id FROM tasks WHERE key_hash = ? AND status = 'live' AND id <> ?").get(task.key_hash, taskId);
+    if (dup) throw httpError(400, 'Stream key ini sedang live di tugas lain. Hentikan live tersebut dulu.');
+  }
 
   if (!task.stop_at_utc && task.duration_sec) {
     const stop = new Date(Date.now() + task.duration_sec * 1000).toISOString();
@@ -277,7 +283,31 @@ export function stopAll(message = 'Server dihentikan') {
   }
 }
 
+// Mencari FFmpeg sisa dari run sebelumnya (dikenali dari argumen khas panel). Linux saja, lewat /proc.
+// Dipanggil saat boot, sebelum live baru dibuat, jadi tidak mungkin mengenai proses milik panel sendiri.
+function killLeftoverFfmpeg() {
+  let entries = [];
+  try { entries = fs.readdirSync('/proc').filter((d) => /^\d+$/.test(d)); } catch { return 0; }
+  let killed = 0;
+  for (const pid of entries) {
+    try {
+      const args = fs.readFileSync(`/proc/${pid}/cmdline`, 'utf8').split('\0');
+      const isPanelFfmpeg = args.some((a) => a.includes('ffmpeg'))
+        && args.includes('-progress') && args.includes('pipe:1')
+        && args.some((a) => a.startsWith('rtmp'));
+      if (isPanelFfmpeg) {
+        process.kill(Number(pid), 'SIGTERM');
+        killed += 1;
+      }
+    } catch { /* proses sudah hilang atau tidak bisa dibaca */ }
+  }
+  return killed;
+}
+
 export function recoverOnBoot() {
+  const leftover = killLeftoverFfmpeg();
+  if (leftover) console.log(`[boot] ${leftover} proses FFmpeg sisa dari run sebelumnya dihentikan`);
+
   const rows = db.prepare("SELECT id FROM tasks WHERE status = 'live'").all();
   for (const r of rows) {
     db.prepare("UPDATE tasks SET status = 'failed', pid = NULL, ended_at = ?, last_error = 'Server restart saat live' WHERE id = ?")

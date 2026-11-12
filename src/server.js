@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config, PACKAGES } from './config.js';
 import { db } from './db.js';
-import { encrypt, decrypt, hintOf } from './crypto.js';
+import { encrypt, decrypt, hintOf, keyFingerprint } from './crypto.js';
 import { TIMEZONES, isValidTz, zonedToUtcIso } from './tz.js';
 import { checkLogin, failLogin, clearLogin } from './ratelimit.js';
 import {
@@ -202,6 +202,18 @@ function parseTask(b, user, existing) {
   const streamKey = String(b.streamKey || '').trim();
   if ((!existing || streamKey) && !KEY_RE.test(streamKey)) throw httpError(400, 'Stream key tidak valid');
 
+  // Satu stream key hanya boleh dipakai satu tugas aktif. Dibandingkan lewat sidik jari.
+  let keyHash = existing ? existing.key_hash : null;
+  if (streamKey) {
+    keyHash = keyFingerprint(streamKey);
+    const used = db.prepare(
+      "SELECT id FROM tasks WHERE key_hash = ? AND status IN ('idle','scheduled','live') AND id <> ?"
+    ).get(keyHash, existing ? existing.id : -1);
+    if (used) {
+      throw httpError(400, 'Stream key ini sedang dipakai tugas lain yang masih aktif. Gunakan key lain, atau hapus/hentikan tugas tersebut.');
+    }
+  }
+
   const startUtc = parseLocal(b.startAt, tz, 'Jadwal mulai');
   const stopUtc = parseLocal(b.stopAt, tz, 'Jadwal stop');
   const durationMin = Number(b.durationMin || 0);
@@ -224,7 +236,7 @@ function parseTask(b, user, existing) {
   }
 
   return {
-    title, file, streamKey, startUtc, stopUtc, duration, repeat,
+    title, file, streamKey, keyHash, startUtc, stopUtc, duration, repeat,
     status: startUtc ? 'scheduled' : 'idle',
   };
 }
@@ -234,10 +246,10 @@ app.post('/api/tasks', requireAuth, wrap((req, res) => {
   checkQuota({ userId: req.user.id, pkg: req.user.package, activate: true });
   const info = db.prepare(`
     INSERT INTO tasks (user_id, title, file_id, stream_key_enc, key_hint, scheduled_start_utc,
-                       stop_at_utc, duration_sec, status, repeat_rule, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       stop_at_utc, duration_sec, status, repeat_rule, created_at, key_hash)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(req.user.id, f.title, f.file.id, encrypt(f.streamKey), hintOf(f.streamKey),
-    f.startUtc, f.stopUtc, f.duration, f.status, f.repeat, now());
+    f.startUtc, f.stopUtc, f.duration, f.status, f.repeat, now(), f.keyHash);
 
   addLog(Number(info.lastInsertRowid), `Tugas dibuat (${f.status}${f.repeat !== 'none' ? `, ulang ${f.repeat}` : ''})`);
   res.status(201).json({ id: Number(info.lastInsertRowid) });
@@ -257,13 +269,14 @@ app.patch('/api/tasks/:id', requireAuth, wrap((req, res) => {
   const f = parseTask(req.body || {}, req.user, task);
   checkQuota({ userId: req.user.id, pkg: req.user.package, excludeId: task.id, activate: true });
   db.prepare(`
-    UPDATE tasks SET title = ?, file_id = ?, stream_key_enc = ?, key_hint = ?,
+    UPDATE tasks SET title = ?, file_id = ?, stream_key_enc = ?, key_hint = ?, key_hash = ?,
       scheduled_start_utc = ?, stop_at_utc = ?, duration_sec = ?, repeat_rule = ?, repeat_spawned = 0,
       status = ?, pid = NULL, started_at = NULL, ended_at = NULL, last_error = NULL
     WHERE id = ?
   `).run(f.title, f.file.id,
     f.streamKey ? encrypt(f.streamKey) : task.stream_key_enc,
     f.streamKey ? hintOf(f.streamKey) : task.key_hint,
+    f.keyHash,
     f.startUtc, f.stopUtc, f.duration, f.repeat, f.status, task.id);
   addLog(task.id, 'Tugas diubah');
   res.json({ ok: true });
@@ -277,10 +290,16 @@ app.post('/api/tasks/:id/start', requireAuth, wrap((req, res) => {
   let targetId = task.id;
   if (['finished', 'stopped', 'failed'].includes(task.status)) {
     checkQuota({ userId: req.user.id, pkg: req.user.package, activate: true, goLive: true });
+    const used = db.prepare(
+      "SELECT id FROM tasks WHERE key_hash = ? AND status IN ('idle','scheduled','live')"
+    ).get(task.key_hash || '');
+    if (task.key_hash && used) {
+      throw httpError(400, 'Stream key ini sedang dipakai tugas lain yang masih aktif.');
+    }
     const info = db.prepare(`
-      INSERT INTO tasks (user_id, title, file_id, stream_key_enc, key_hint, duration_sec, status, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, 'idle', ?)
-    `).run(task.user_id, task.title, task.file_id, task.stream_key_enc, task.key_hint, task.duration_sec, now());
+      INSERT INTO tasks (user_id, title, file_id, stream_key_enc, key_hint, duration_sec, status, created_at, key_hash)
+      VALUES (?, ?, ?, ?, ?, ?, 'idle', ?, ?)
+    `).run(task.user_id, task.title, task.file_id, task.stream_key_enc, task.key_hint, task.duration_sec, now(), task.key_hash);
     targetId = Number(info.lastInsertRowid);
   }
   launchTask(targetId);
@@ -682,10 +701,24 @@ for (const sig of ['SIGTERM', 'SIGINT']) {
   });
 }
 
+// Tugas lama belum punya sidik jari key. Dihitung sekali dari key yang tersimpan.
+for (const row of db.prepare('SELECT id, stream_key_enc FROM tasks WHERE key_hash IS NULL').all()) {
+  try {
+    db.prepare('UPDATE tasks SET key_hash = ? WHERE id = ?').run(keyFingerprint(decrypt(row.stream_key_enc)), row.id);
+  } catch (err) {
+    reportError('backfill-key', err);
+  }
+}
+
 recoverOnBoot();
 startMonitor();
 startBandwidthFlush();
 startScheduler(config.tickMs);
+
+// Panel sebaiknya dijalankan sebagai service systemd. Di luar itu, FFmpeg bisa tertinggal saat panel berhenti.
+if (process.platform === 'linux' && !process.env.INVOCATION_ID) {
+  console.warn('[peringatan] Panel tidak berjalan sebagai service systemd. Kalau terminal ditutup atau proses dimatikan paksa, FFmpeg bisa tertinggal.');
+}
 
 app.listen(config.port, config.host, () => {
   console.log(`Tubyu Live Panel jalan di http://${config.host}:${config.port}`);

@@ -28,3 +28,8 @@ export function decrypt(payload) {
 export function hintOf(streamKey) {
   return `${streamKey.slice(0, 4)}-****-${streamKey.slice(-4)}`;
 }
+
+// Sidik jari key untuk mengecek duplikasi, tanpa menyimpan key dalam bentuk teks
+export function keyFingerprint(streamKey) {
+  return crypto.createHmac('sha256', key()).update(streamKey).digest('hex');
+}

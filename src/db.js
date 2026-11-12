@@ -108,3 +108,5 @@ CREATE TABLE IF NOT EXISTS usage_customer_daily (
 `);
 ensureColumn('files', 'progress_bytes', 'INTEGER NOT NULL DEFAULT 0');
 ensureColumn('files', 'total_bytes', 'INTEGER NOT NULL DEFAULT 0');
+ensureColumn('tasks', 'key_hash', 'TEXT');
+db.exec('CREATE INDEX IF NOT EXISTS idx_tasks_key_hash ON tasks(key_hash)');
