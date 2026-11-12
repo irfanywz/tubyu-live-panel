@@ -2,6 +2,13 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [0.14.2]
+
+### Diubah
+- Log tugas mencatat perintah FFmpeg yang dijalankan (stream key disamarkan) dan PID-nya.
+- Saat FFmpeg berhenti tanpa kode keluar, pesannya menyebut sinyal yang menghentikan prosesnya, bukan "kode null".
+- Log berhenti mencatat kode keluar dan sinyal.
+
 ## [0.14.1]
 
 ### Diperbaiki

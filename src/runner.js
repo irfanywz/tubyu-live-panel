@@ -118,7 +118,9 @@ export function launchTask(taskId, { resume = false } = {}) {
   } else {
     db.prepare("UPDATE tasks SET status = 'live', pid = ?, started_at = ?, ended_at = NULL, last_error = NULL WHERE id = ?")
       .run(child.pid ?? null, now(), taskId);
-    addLog(taskId, 'Live dimulai');
+    const shown = args.map((a) => (a === config.rtmpBase + streamKey ? config.rtmpBase + '****' : a));
+  addLog(taskId, `Menjalankan: ${config.ffmpegPath} ${shown.join(' ')} (pid ${child.pid ?? '-'})`);
+  addLog(taskId, 'Live dimulai');
   }
 
   let outBuf = '';
@@ -150,7 +152,7 @@ export function launchTask(taskId, { resume = false } = {}) {
     addLog(taskId, entry.errorMessage);
   }));
 
-  child.on('exit', guard('ffmpeg-exit', (code) => {
+  child.on('exit', guard('ffmpeg-exit', (code, signal) => {
     if (!running.has(taskId)) return;
     running.delete(taskId);
 
@@ -170,13 +172,18 @@ export function launchTask(taskId, { resume = false } = {}) {
     let lastError = null;
     if (entry.errorMessage) lastError = entry.errorMessage;
     else if (status === 'failed') {
-      lastError = friendlyError(entry.recent) || `FFmpeg berhenti tidak terduga (kode ${code}). Lihat Log untuk detail.`;
+      if (code === null && signal) {
+        // Proses dimatikan dari luar, bukan karena error FFmpeg
+        lastError = `FFmpeg dihentikan oleh sistem (sinyal ${signal}). Biasanya karena kehabisan memori, proses dibunuh oleh sistem, atau sesi terminal ditutup.`;
+      } else {
+        lastError = friendlyError(entry.recent) || `FFmpeg berhenti tidak terduga (kode ${code}). Lihat Log untuk detail.`;
+      }
     }
     retryState.delete(taskId);
 
     db.prepare('UPDATE tasks SET status = ?, pid = NULL, ended_at = ?, last_error = ? WHERE id = ?')
       .run(status, now(), lastError, taskId);
-    addLog(taskId, `Live berhenti: ${status}${lastError ? ` (${lastError})` : ''}`);
+    addLog(taskId, `Live berhenti: ${status} (kode ${code ?? '-'}, sinyal ${signal ?? '-'})${lastError ? ` · ${lastError}` : ''}`);
   }));
 }
 
