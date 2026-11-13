@@ -3,7 +3,7 @@
 Panel web untuk menjalankan live streaming ke YouTube dari file video yang sudah diunduh.
 Dibuat dengan Node.js, Express, SQLite, dan FFmpeg. Berjalan di Windows, Linux, dan macOS.
 
-Lihat `ARCHITECTURE.md` untuk detail teknis dan `CHANGELOG.md` untuk riwayat perubahan.
+Dokumentasi teknis dan riwayat perubahan ada di folder `AI_MEMORY/` (`ARCHITECTURE.md`, `CHANGELOG.md`).
 
 ## Persyaratan
 

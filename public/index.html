@@ -197,7 +197,7 @@
               <div x-show="t.status === 'live'" class="mt-3">
                 <div class="flex items-center justify-between text-xs">
                   <span class="text-ink truncate" x-text="liveText(t)"></span>
-                  <span class="shrink-0 font-semibold" x-text="t.remaining_sec !== null ? remain(t.remaining_sec) : 'Tanpa batas'"></span>
+                  <span class="shrink-0 font-semibold" x-text="!t.stats ? 'Menghubungkan...' : (t.remaining_sec !== null ? remain(t.remaining_sec) : 'Tanpa batas')"></span>
                 </div>
                 <div class="mt-1.5 h-1.5 rounded-full bg-raised overflow-hidden">
                   <div class="h-1.5 bg-gradient-to-r from-red-500 to-pink-500 transition-all duration-1000"

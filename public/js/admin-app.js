@@ -1,5 +1,5 @@
 // Panel admin. Semua pemantauan ada di Dashboard dan diperbarui lewat tombol Refresh.
-const ADMIN_TABS = ['dashboard', 'customer', 'berkas', 'audit', 'akun'];
+const ADMIN_TABS = ['dashboard', 'customer', 'berkas', 'audit', 'akun', 'tentang'];
 const TAB_ALIAS = { ringkasan: 'dashboard', live: 'dashboard', bandwidth: 'dashboard', sistem: 'dashboard' };
 
 const PKG_INFO = {
@@ -39,6 +39,13 @@ function adminApp() {
     files: [],
     audit: [],
     preview: null,
+    about: ABOUT_INFO,
+    changelog: CHANGELOG_LOG,
+    version: null,
+    ctModal: null,
+    ctTasks: [],
+    logView: null,
+    logText: '',
 
     // customer
     newC: { username: '', password: '', hours: 720, package: 'A' },
@@ -133,6 +140,7 @@ function adminApp() {
       try {
         if (this.tab === 'berkas') this.files = await api('/api/admin/files');
         if (this.tab === 'audit') this.audit = await api('/api/admin/audit');
+        if (this.tab === 'tentang' && !this.version) this.version = (await api('/api/about')).version;
       } catch (e) { /* dicoba lagi saat Refresh */ }
     },
 
@@ -153,6 +161,21 @@ function adminApp() {
     },
 
     // ----- customer -----
+    async openCustomerTasks(c) {
+      try {
+        this.ctTasks = await api(`/api/admin/customers/${c.id}/tasks`);
+        this.ctModal = c;
+      } catch (e) { this.say(e.message, false); }
+    },
+
+    async openTaskLog(t) {
+      try {
+        const logs = await api(`/api/admin/tasks/${t.id}/logs`);
+        this.logText = logs.map((l) => `[${this.fmt(l.at)}] ${l.message}`).join('\n') || 'Belum ada log untuk tugas ini.';
+        this.logView = t;
+      } catch (e) { this.say(e.message, false); }
+    },
+
     setHours(h) { this.newC.hours = h; },
 
     get hoursHint() {
@@ -323,6 +346,8 @@ function adminApp() {
     },
 
     // ----- turunan untuk tampilan -----
+    get changelogTerbaru() { return [...this.changelog].reverse(); },
+
     get customersOnly() { return this.customers.filter((c) => c.role === 'customer'); },
     get systemOk() { return this.system.length > 0 && this.system.every((c) => c.ok); },
     get expiringList() { return this.customersOnly.filter((c) => c.remaining_sec < 3 * 86400 && !c.disabled); },

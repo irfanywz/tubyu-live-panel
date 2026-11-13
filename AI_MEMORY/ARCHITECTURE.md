@@ -1,4 +1,4 @@
-# Arsitektur Tubyu Live Panel
+# ARCHITECTURE
 
 Panel web untuk menjalankan live streaming ke YouTube dari file video yang sudah diunduh.
 Satu proses Node.js melayani API, halaman web, dan scheduler. Database berupa SQLite.
@@ -161,3 +161,40 @@ npm start
 npm test          # tes unit
 npm run doctor    # cek kesiapan sistem kapan saja
 ```
+
+
+---
+
+
+## Proses (ringkasan dependensi)
+Satu proses Node: `src/server.js` menjalankan Express (API + static `public/`), SSE, scheduler, monitor, dan flush bandwidth. Boot: `recoverOnBoot()` → `startMonitor()` → `startBandwidthFlush()` → `startScheduler()`.
+
+## Alur dependensi (dari bawah ke atas)
+- `config.js` (env, resolusi FFmpeg, PACKAGES) → dipakai hampir semua.
+- `db.js` (skema, migrasi `ensureColumn`, drop tabel lama) → semua modul data.
+- `crypto.js` (AES-256-GCM, `keyFingerprint` HMAC), `tz.js`, `errors.js`, `ratelimit.js`.
+- `auth.js` (sesi, requireAuth/requireAdmin) → `server.js`.
+- `drive.js` (URL + unduhan) → `files.js` (antrean unduhan, thumbnail, batal, hapus).
+- `limits.js` (`checkQuota`, `usageFor`) → dipakai `server.js`, `runner.js`, `repeat.js`.
+- `logs.js` (log per file) → `runner.js`, `scheduler.js`, `repeat.js`, `server.js`.
+- `ffmpeg-errors.js` (terjemahan error) → `runner.js`.
+- `runner.js` (spawn FFmpeg, progres, timer, sambung ulang, stop) → `scheduler.js`, `server.js`.
+- `repeat.js` (occurrence berulang) → `scheduler.js`.
+- `scheduler.js` (tick 5 detik: expiry, stop, start, watchdog, repeat).
+- `monitor.js` (CPU/RAM/disk/jaringan, sampel 5 menit) → `bandwidth.js`.
+- `bandwidth.js` (riwayat 5 menit dan per customer per hari, flush 60 detik).
+- `checks.js` (pemeriksaan sistem) → `doctor.js`, `server.js` (/api/system), `scripts/setup.js`.
+- `admin.js` (CLI admin), `scripts/gensecret.js`, `scripts/setup.js`.
+
+## Frontend
+- `public/index.html` + `js/app.js` (gabung mixin: `auth`, `tasks`, `files`, `archive`, `settings`) — panel customer.
+- `public/admin.html` + `js/admin-app.js` (+ `js/about.js`) — panel admin.
+- `public/js/util.js` (format, `Theme`, `applyDelta`), `public/js/api.js` (fetch wrapper).
+- Alpine memanggil `init()` otomatis; JANGAN pakai `x-init="init()"` lagi (menyebabkan init dobel).
+
+## Realtime
+- Customer: `/api/stream` (SSE). Event `state` penuh saat konek, lalu `delta` (upsert/remove/ids) tiap 2 detik bila berubah.
+- Admin: tidak memakai SSE. Dashboard di-refresh manual atau auto refresh (10 detik, jaringan tetap dibaca).
+
+## Penyimpanan
+- `data/app.db` (SQLite WAL), `storage/videos`, `storage/thumbs`, `storage/tmp`, `storage/logs/<id>.log`, `storage/logs/server-errors.log`.

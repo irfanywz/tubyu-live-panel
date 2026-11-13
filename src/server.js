@@ -575,6 +575,29 @@ app.delete('/api/admin/files/:id', requireAdmin, wrap((req, res) => {
   res.json({ ok: true });
 }));
 
+// ---------- ADMIN: TUGAS & LOG PER CUSTOMER ----------
+app.get('/api/admin/customers/:id/tasks', requireAdmin, (req, res) => {
+  const u = getCustomer(req.params.id);
+  const rows = db.prepare(`
+    SELECT t.id, t.title, t.status, t.last_error, t.started_at, t.ended_at, t.key_hint, t.pid, f.filename AS file_name
+    FROM tasks t JOIN files f ON f.id = t.file_id
+    WHERE t.user_id = ? ORDER BY t.id DESC LIMIT 100
+  `).all(u.id);
+  res.json(rows);
+});
+
+app.get('/api/admin/tasks/:id/logs', requireAdmin, wrap((req, res) => {
+  const t = db.prepare('SELECT id, title FROM tasks WHERE id = ?').get(req.params.id);
+  if (!t) throw httpError(404, 'Tugas tidak ditemukan');
+  res.json(readLogs(t.id, 300));
+}));
+
+// ---------- ADMIN: TENTANG ----------
+app.get('/api/about', requireAdmin, (req, res) => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(config.root, 'package.json'), 'utf8'));
+  res.json({ name: pkg.name, version: pkg.version });
+});
+
 // ---------- ADMIN: MONITOR (on demand) ----------
 app.get('/api/admin/monitor', requireAdmin, wrap(async (req, res) => {
   const snap = await snapshotNow();

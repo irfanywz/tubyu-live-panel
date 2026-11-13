@@ -41,6 +41,7 @@
       <button class="nav" :class="tab==='berkas' && 'on'" @click="go('berkas')"><iconify-icon icon="tabler:movie" class="ico"></iconify-icon> Berkas</button>
       <button class="nav" :class="tab==='audit' && 'on'" @click="go('audit')"><iconify-icon icon="tabler:history" class="ico"></iconify-icon> Audit log</button>
       <button class="nav" :class="tab==='akun' && 'on'" @click="go('akun')"><iconify-icon icon="tabler:key" class="ico"></iconify-icon> Akun &amp; sandi</button>
+      <button class="nav" :class="tab==='tentang' && 'on'" @click="go('tentang')"><iconify-icon icon="tabler:info-circle" class="ico"></iconify-icon> Tentang</button>
     </nav>
     <button class="btn btn-ghost w-full justify-center mt-auto" @click="toggleTheme()">
       <iconify-icon :icon="theme === 'dark' ? 'tabler:sun' : 'tabler:moon'" class="ico"></iconify-icon>
@@ -183,7 +184,7 @@
               <div class="font-semibold truncate" x-text="t.title"></div>
               <div class="text-xs text-muted">Customer: <span x-text="t.owner"></span> · <span x-text="t.file_name || '-'"></span></div>
               <div class="mt-2 text-xs" :class="t.stats && t.stats.age_sec > 15 ? 'text-warn' : 'text-ink'" x-text="liveText(t)"></div>
-              <div class="text-xs text-muted mt-1" x-show="t.remaining_sec !== null" x-text="'Sisa ' + remain(t.remaining_sec)"></div>
+              <div class="text-xs text-muted mt-1" x-show="t.remaining_sec !== null" x-text="t.stats ? 'Sisa ' + remain(t.remaining_sec) : 'Menunggu tersambung'"></div>
               <div class="mt-3"><button class="btn btn-danger btn-sm" @click="stopLive(t)">Stop</button></div>
             </div>
           </template>
@@ -199,7 +200,7 @@
                   <td x-text="t.owner"></td>
                   <td class="text-xs" x-text="t.file_name || '-'"></td>
                   <td class="text-xs" :class="t.stats && t.stats.age_sec > 15 ? 'text-warn' : ''" x-text="liveText(t)"></td>
-                  <td class="text-xs" x-text="t.remaining_sec !== null ? remain(t.remaining_sec) : 'Manual'"></td>
+                  <td class="text-xs" x-text="!t.stats ? 'Menghubungkan...' : (t.remaining_sec !== null ? remain(t.remaining_sec) : 'Manual')"></td>
                   <td><button class="btn btn-danger btn-sm" @click="stopLive(t)">Stop</button></td>
                 </tr>
               </template>
@@ -394,7 +395,8 @@
                   <button class="px-2.5 py-1" :class="c.package === p ? 'bg-accent-soft text-accent-ink font-semibold' : 'text-muted'" @click="setPackage(c, p)" x-text="'Paket ' + p"></button>
                 </template>
               </div>
-              <button class="btn btn-sm" @click="extend(c, 24)">+1 hari</button>
+              <button class="btn btn-sm btn-ghost" @click="openCustomerTasks(c)"><iconify-icon icon="tabler:list-details" class="ico"></iconify-icon> Tugas &amp; log</button>
+                    <button class="btn btn-sm" @click="extend(c, 24)">+1 hari</button>
               <button class="btn btn-sm" @click="extend(c, 168)">+7 hari</button>
               <button class="btn btn-sm" @click="extend(c, 720)">+30 hari</button>
               <button class="btn btn-sm btn-ghost" @click="resetPw(c)"><iconify-icon icon="tabler:copy" class="ico"></iconify-icon> Reset &amp; salin sandi</button>
@@ -433,6 +435,7 @@
                 <td x-text="c.live_count"></td>
                 <td>
                   <div class="flex flex-wrap gap-1">
+                    <button class="btn btn-sm btn-ghost" @click="openCustomerTasks(c)"><iconify-icon icon="tabler:list-details" class="ico"></iconify-icon> Tugas &amp; log</button>
                     <button class="btn btn-sm" @click="extend(c, 24)">+1 hari</button>
                     <button class="btn btn-sm" @click="extend(c, 168)">+7 hari</button>
                     <button class="btn btn-sm" @click="extend(c, 720)">+30 hari</button>
@@ -541,6 +544,57 @@
       </div>
     </section>
 
+    <!-- ===================== TENTANG ===================== -->
+    <section x-show="tab==='tentang'" class="space-y-5 max-w-3xl">
+      <h1 class="text-xl md:text-2xl font-semibold">Tentang</h1>
+
+      <div class="card p-5 space-y-4">
+        <div class="flex items-center gap-4">
+          <img src="/img/logo.svg" alt="" class="h-14 w-14 shrink-0" />
+          <div class="min-w-0">
+            <div class="text-lg font-semibold" x-text="about.name"></div>
+            <div class="text-sm text-muted">Versi <span class="font-mono text-ink" x-text="version || '...'"></span></div>
+          </div>
+        </div>
+
+        <p class="text-sm text-muted leading-relaxed" x-text="about.description"></p>
+
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div class="rounded-lg bg-raised p-3">
+            <dt class="text-xs text-muted">Pengembang</dt>
+            <dd class="font-medium" x-text="about.developer"></dd>
+          </div>
+          <div class="rounded-lg bg-raised p-3">
+            <dt class="text-xs text-muted">Versi</dt>
+            <dd class="font-medium" x-text="version || '...'"></dd>
+          </div>
+        </dl>
+
+        <div class="flex flex-wrap gap-2">
+          <a class="btn" :href="about.donate" target="_blank" rel="noopener">
+            <iconify-icon icon="tabler:heart" class="ico"></iconify-icon> Donasi
+          </a>
+          <a class="btn btn-ghost" :href="about.website" target="_blank" rel="noopener">
+            <iconify-icon icon="tabler:world" class="ico"></iconify-icon> Website
+          </a>
+        </div>
+      </div>
+
+      <div class="card p-5">
+        <div class="font-semibold mb-3">Riwayat perubahan</div>
+        <template x-for="r in changelogTerbaru" :key="r.version">
+          <div class="border-t border-line py-3 first:border-t-0">
+            <div class="font-semibold text-sm">v<span x-text="r.version"></span></div>
+            <ul class="list-disc pl-5 mt-1 space-y-1 text-sm text-muted">
+              <template x-for="item in r.items" :key="item">
+                <li x-text="item"></li>
+              </template>
+            </ul>
+          </div>
+        </template>
+      </div>
+    </section>
+
     <!-- ===================== AKUN ===================== -->
     <section x-show="tab==='akun'">
       <h1 class="text-xl md:text-2xl font-semibold mb-4">Akun &amp; sandi</h1>
@@ -587,6 +641,7 @@
     <div class="grid gap-2">
       <button class="nav" @click="go('audit')"><iconify-icon icon="tabler:history" class="ico"></iconify-icon> Audit log</button>
       <button class="nav" @click="go('akun')"><iconify-icon icon="tabler:key" class="ico"></iconify-icon> Akun &amp; sandi</button>
+      <button class="nav" @click="go('tentang')"><iconify-icon icon="tabler:info-circle" class="ico"></iconify-icon> Tentang</button>
       <button class="nav text-err" @click="logout()"><iconify-icon icon="tabler:logout" class="ico"></iconify-icon> Logout</button>
     </div>
   </div>
@@ -632,6 +687,52 @@
   </div>
 </div>
 
+<!-- MODAL TUGAS CUSTOMER -->
+<div x-show="ctModal" x-cloak class="fixed inset-0 z-50 bg-black/60 flex items-end md:items-center justify-center md:p-4" @click.self="ctModal = null">
+  <div class="card w-full md:max-w-3xl rounded-b-none md:rounded-2xl p-5 max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold">Tugas &amp; log · <span x-text="ctModal ? ctModal.username : ''"></span></h3>
+      <button class="btn btn-sm btn-ghost" @click="ctModal = null" aria-label="Tutup"><iconify-icon icon="tabler:x"></iconify-icon></button>
+    </div>
+    <div class="grid gap-2">
+      <template x-for="t in ctTasks" :key="t.id">
+        <div class="rounded-lg bg-raised p-3 text-sm flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+          <div class="min-w-0">
+            <div class="font-medium truncate" x-text="t.title"></div>
+            <div class="text-xs text-muted truncate" x-text="(t.file_name || '-') + ' · ' + t.key_hint"></div>
+            <div class="text-xs text-muted" x-text="'Mulai ' + fmt(t.started_at) + ' · Berhenti ' + fmt(t.ended_at)"></div>
+            <div x-show="t.last_error" class="text-xs text-err mt-1" x-text="t.last_error"></div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="badge" :class="'b-' + t.status" x-text="t.status"></span>
+            <button class="btn btn-sm" @click="openTaskLog(t)">Log</button>
+          </div>
+        </div>
+      </template>
+      <p x-show="ctTasks.length === 0" class="text-center text-muted py-6">Customer ini belum punya tugas.</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LOG TUGAS -->
+<div x-show="logView" x-cloak class="fixed inset-0 z-[60] bg-black/70 flex items-end md:items-center justify-center md:p-4" @click.self="logView = null">
+  <div class="card w-full md:max-w-4xl rounded-b-none md:rounded-2xl p-5 max-h-[92vh] flex flex-col">
+    <div class="flex items-center justify-between mb-3 gap-2">
+      <div class="min-w-0">
+        <h3 class="font-semibold truncate" x-text="logView ? 'Log: ' + logView.title : ''"></h3>
+        <p class="text-xs text-muted">Stream key sudah disamarkan di log.</p>
+      </div>
+      <div class="flex gap-2 shrink-0">
+        <button class="btn btn-sm btn-ghost" @click="copyText(logText, 'log')">
+          <iconify-icon :icon="copiedKey === 'log' ? 'tabler:check' : 'tabler:copy'" class="ico"></iconify-icon> Salin log
+        </button>
+        <button class="btn btn-sm btn-ghost" @click="logView = null" aria-label="Tutup"><iconify-icon icon="tabler:x"></iconify-icon></button>
+      </div>
+    </div>
+    <pre class="flex-1 overflow-auto bg-input border border-line rounded-lg p-3 text-xs whitespace-pre-wrap break-all" x-text="logText"></pre>
+  </div>
+</div>
+
 <!-- MODAL PREVIEW -->
 <div x-show="preview" x-cloak class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" @click.self="closePreview()">
   <div class="card w-full max-w-3xl p-4">
@@ -648,7 +749,9 @@
 
 <script src="/js/util.js?v=0.12.3"></script>
 <script src="/js/api.js?v=0.12.3"></script>
-<script src="/js/admin-app.js?v=0.12.3"></script>
+<script src="/js/about.js?v=0.17.0"></script>
+<script src="/js/admin-app.js?v=0.17.0"></script>
+
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </body>
 </html>

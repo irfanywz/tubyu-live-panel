@@ -85,6 +85,20 @@ function parseProgress(entry, line) {
   };
 }
 
+// Dipanggil saat FFmpeg sudah mengirim data. Di sini timer auto-stop mulai dihitung.
+function onConnected(taskId) {
+  const t = loadTask(taskId);
+  if (!t) return;
+  const nowIso = now();
+  if (t.duration_sec && !t.stop_at_utc) {
+    const stop = new Date(Date.now() + t.duration_sec * 1000).toISOString();
+    db.prepare('UPDATE tasks SET stop_at_utc = ?, started_at = ? WHERE id = ?').run(stop, nowIso, taskId);
+  } else {
+    db.prepare('UPDATE tasks SET started_at = ? WHERE id = ?').run(nowIso, taskId);
+  }
+  addLog(taskId, 'Tersambung ke YouTube. Timer dimulai.');
+}
+
 export function launchTask(taskId, { resume = false } = {}) {
   const task = loadTask(taskId);
   if (!task) throw httpError(404, 'Tugas tidak ditemukan');
@@ -98,10 +112,7 @@ export function launchTask(taskId, { resume = false } = {}) {
     if (dup) throw httpError(400, 'Stream key ini sedang live di tugas lain. Hentikan live tersebut dulu.');
   }
 
-  if (!task.stop_at_utc && task.duration_sec) {
-    const stop = new Date(Date.now() + task.duration_sec * 1000).toISOString();
-    db.prepare('UPDATE tasks SET stop_at_utc = ? WHERE id = ?').run(stop, taskId);
-  }
+  // Timer auto-stop dimulai saat FFmpeg benar-benar tersambung (lihat onConnected)
 
   const streamKey = decrypt(task.stream_key_enc);
   const args = [
@@ -136,6 +147,11 @@ export function launchTask(taskId, { resume = false } = {}) {
     while ((idx = outBuf.indexOf('\n')) >= 0) {
       parseProgress(entry, outBuf.slice(0, idx).trim());
       outBuf = outBuf.slice(idx + 1);
+      // Progres pertama berarti data sudah mengalir ke YouTube
+      if (entry.stats && !entry.connected) {
+        entry.connected = true;
+        onConnected(taskId);
+      }
     }
   }));
 

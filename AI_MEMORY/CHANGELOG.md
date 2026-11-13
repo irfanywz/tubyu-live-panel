@@ -2,6 +2,19 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [0.17.0]
+
+### Ditambahkan
+- Menu Tentang di panel admin: informasi aplikasi, pengembang, versi, tombol donasi dan website, serta riwayat perubahan.
+
+## [0.16.0]
+
+### Ditambahkan
+- Admin bisa melihat tugas per customer dan log lengkap setiap tugas, termasuk perintah FFmpeg yang dijalankan (stream key disamarkan).
+
+### Diubah
+- Timer auto-stop dimulai saat FFmpeg benar-benar tersambung dan mengirim data, bukan saat proses dibuat. Selama menghubungkan, label menunjukkan "Menghubungkan...".
+
 ## [0.15.0]
 
 ### Ditambahkan
