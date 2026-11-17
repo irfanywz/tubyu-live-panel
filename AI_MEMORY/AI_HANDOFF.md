@@ -1,7 +1,7 @@
 # AI_HANDOFF (baca ini dulu)
 
 ## Proyek
-**Tubyu Live Panel** (v0.17.0): panel web untuk live streaming YouTube dari file video, model rental dengan masa aktif dan paket A/B/C. Node.js 22.13+, Express, `node:sqlite`, Alpine.js + Tailwind CDN, FFmpeg (`ffmpeg-static` opsional atau `FFMPEG_PATH`).
+**Tubyu Live Panel** (v0.18.0): panel web untuk live streaming YouTube dari file video, model rental dengan masa aktif dan paket A/B/C. Node.js 22.13+, Express, `node:sqlite`, Alpine.js + Tailwind CDN, FFmpeg (`ffmpeg-static` opsional, unduhan otomatis ke `storage/bin` lewat `npm run getffmpeg`, atau `FFMPEG_PATH`).
 
 ## Status
 Fungsional lengkap untuk customer dan admin. Sebagian besar sudah dilaporkan pemilik berjalan di Windows (install, setup, CLI live). Panel live di Cloud Shell bermasalah karena binary ffmpeg-static (segfault) dan proses sisa; sudah ditangani dengan FFmpeg sistem dan pembersihan proses sisa. Banyak perubahan UI belum dikonfirmasi pemilik (lihat CURRENT_TASK.md).
@@ -16,12 +16,12 @@ Fungsional lengkap untuk customer dan admin. Sebagian besar sudah dilaporkan pem
 - Jangan simpan rahasia di dokumentasi atau kode.
 
 ## File penting untuk pekerjaan berikutnya
-- Live/FFmpeg: `src/runner.js`, `src/scheduler.js`, `src/ffmpeg-errors.js`, `src/config.js` (resolveFfmpeg).
+- Live/FFmpeg: `src/runner.js`, `src/scheduler.js`, `src/ffmpeg-errors.js`, `src/ffmpeg-dl.js`, `src/config.js` (resolveFfmpeg).
 - Kuota & key: `src/limits.js`, `src/server.js` (`parseTask`), `src/crypto.js`.
 - Unduhan: `src/files.js`, `src/drive.js`, `public/js/mixins/files.js`.
 - Admin: `public/admin.html`, `public/js/admin-app.js`, `public/js/about.js`.
 - Customer: `public/index.html`, `public/js/mixins/*.js`, `public/js/app.js`.
-- Setup/deploy: `scripts/setup.js`, `deploy/DEPLOY.md`.
+- Setup/deploy: `scripts/setup.js`, `scripts/getffmpeg.js`, `deploy/DEPLOY.md`.
 
 ## Keputusan penting
 Lihat `DECISIONS.md`. Yang paling sering menyangkut pekerjaan baru: kuota = tugas aktif + live bersamaan; monitoring tanpa PowerShell; manual refresh di admin; log per file.

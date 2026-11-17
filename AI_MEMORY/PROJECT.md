@@ -10,7 +10,7 @@ Tubyu Live Panel: panel web untuk menjalankan live streaming ke YouTube dari fil
 ## Teknologi
 - Node.js 22.13+ (disarankan 24 LTS).
 - Backend: Express 4, bcryptjs, dotenv. Database: `node:sqlite` bawaan Node (bukan better-sqlite3, karena compile native gagal di Windows).
-- FFmpeg: `ffmpeg-static` (optionalDependency) atau `FFMPEG_PATH` di `.env`.
+- FFmpeg: `ffmpeg-static` (optionalDependency), atau unduhan otomatis ke `storage/bin` (`npm run getffmpeg`, juga dijalankan setup bila ffmpeg-static gagal), atau `FFMPEG_PATH` di `.env`.
 - Frontend: HTML statis + Alpine.js 3.14.1 + Tailwind (CDN), tanpa build step. Icon: Iconify (CDN).
 - Tidak ada dependency monitoring eksternal (systeminformation sudah dihapus).
 

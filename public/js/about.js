@@ -87,4 +87,10 @@ const CHANGELOG_LOG = [
     'Timer auto-stop mulai saat live benar-benar tersambung ke YouTube.',
     'Admin bisa melihat tugas dan log per customer.',
   ] },
+  { version: '0.17.0', items: [
+    'Menu Tentang di admin: info aplikasi, riwayat perubahan, tombol donasi dan website.',
+  ] },
+  { version: '0.18.0', items: [
+    'Pasang jadi lebih mudah: kalau FFmpeg bawaan gagal terpasang, panel bisa mengunduhnya sendiri saat setup, atau lewat perintah khusus.',
+  ] },
 ];

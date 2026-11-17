@@ -2,13 +2,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { downloadedFfmpegPath } from './ffmpeg-dl.js';
 import 'dotenv/config';
 
 const require = createRequire(import.meta.url);
 
-// Urutan: FFMPEG_PATH di .env > binary dari ffmpeg-static (npm) > "ffmpeg" di PATH
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const storageDir = process.env.STORAGE_DIR || path.join(root, 'storage');
+
+// Urutan: FFMPEG_PATH di .env > hasil unduhan di storage/bin > binary dari ffmpeg-static (npm) > "ffmpeg" di PATH
 function resolveFfmpeg() {
   if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
+  const downloaded = downloadedFfmpegPath(root);
+  if (fs.existsSync(downloaded)) return downloaded;
   try {
     // Binary harus benar-benar ada. Kalau npm memblokir skrip install, file tidak akan ada.
     const bundled = require('ffmpeg-static');
@@ -17,14 +23,12 @@ function resolveFfmpeg() {
   return 'ffmpeg';
 }
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-
 export const config = {
   root,
   port: Number(process.env.PORT || 3000),
   host: process.env.HOST || '127.0.0.1',
   dbPath: process.env.DB_PATH || path.join(root, 'data', 'app.db'),
-  storageDir: process.env.STORAGE_DIR || path.join(root, 'storage'),
+  storageDir,
   ffmpegPath: resolveFfmpeg(),
   rtmpBase: process.env.RTMP_BASE || 'rtmps://a.rtmps.youtube.com:443/live2/',
   encKey: process.env.ENC_KEY || '',

@@ -1,6 +1,6 @@
 {
   "name": "tubyu-live-panel",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -9,6 +9,7 @@
   "scripts": {
     "setup": "node scripts/setup.js",
     "doctor": "node src/doctor.js",
+    "getffmpeg": "node --no-warnings scripts/getffmpeg.js",
     "gensecret": "node scripts/gensecret.js",
     "start": "node --no-warnings src/server.js",
     "admin": "node --no-warnings src/admin.js",

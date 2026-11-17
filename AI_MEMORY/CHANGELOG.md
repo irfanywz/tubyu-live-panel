@@ -2,6 +2,17 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [0.18.0]
+
+### Ditambahkan
+- Unduhan FFmpeg otomatis: kalau binary bawaan `ffmpeg-static` gagal terpasang atau tidak bisa dijalankan, `npm run setup` mengunduh binary ke `storage/bin/`. Perintah manual: `npm run getffmpeg`.
+- Sumber unduhan: rilis GitHub `eugeneware/ffmpeg-static` (sama dengan yang diunduh npm), satu file binary sesuai sistem (win32/linux/darwin, x64/arm64), tanpa ekstrak zip/tar.
+- Urutan pemilihan FFmpeg (`resolveFfmpeg`): `FFMPEG_PATH` di .env > `storage/bin` (hasil unduhan) > `ffmpeg-static` > `ffmpeg` di PATH.
+
+### Diubah
+- Setup memeriksa FFmpeg bawaan dengan menjalankannya (`-version`), bukan hanya mengecek filenya ada, supaya binary rusak (misalnya segfault) ikut terdeteksi.
+- Hint pemeriksaan FFmpeg (`checks.js`) sekarang menyarankan `npm run getffmpeg`.
+
 ## [0.17.0]
 
 ### Ditambahkan

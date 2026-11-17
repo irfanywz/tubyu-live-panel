@@ -5,36 +5,60 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { downloadFfmpeg, ffmpegRuns } from '../src/ffmpeg-dl.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+const fmtMB = (b) => `${(b / 1024 / 1024).toFixed(1)} MB`;
+const progressLine = (size, declared) => {
+  const pct = declared ? ` (${Math.round((size / declared) * 100)}%)` : '';
+  process.stdout.write(`\r  ${fmtMB(size)}${pct}   `);
+};
 // ffmpeg-static mengunduh binary lewat skrip install, yang bisa diblokir npm.
-// Kalau binary belum ada, izinkan skripnya lalu jalankan ulang build-nya.
+// Kalau binary belum ada atau tidak bisa dijalankan, izinkan skripnya lalu jalankan ulang build-nya.
 function bundledFfmpegExists() {
   try {
-    const require = createRequire(import.meta.url);
-    const bin = require('ffmpeg-static');
+    const bin = createRequire(import.meta.url)('ffmpeg-static');
     return !!bin && fs.existsSync(bin);
   } catch {
     return false;
   }
 }
 
-function ensureFfmpegBinary() {
-  if (bundledFfmpegExists()) {
-    console.log('FFmpeg bawaan sudah ada.');
+// Bukan hanya filenya ada: binary yang rusak (misalnya segfault di sandbox) juga dianggap gagal.
+function bundledFfmpegWorks() {
+  if (!bundledFfmpegExists()) return false;
+  try {
+    return ffmpegRuns(createRequire(import.meta.url)('ffmpeg-static'));
+  } catch {
+    return false;
+  }
+}
+
+async function ensureFfmpegBinary() {
+  if (bundledFfmpegWorks()) {
+    console.log('FFmpeg bawaan sudah ada dan bisa dijalankan.');
     return true;
   }
   console.log('Binary FFmpeg belum terunduh. Mengizinkan skrip ffmpeg-static lalu menjalankan ulang build-nya...');
   // Perintah approve hanya ada di npm versi tertentu. Kalau tidak dikenali, lanjut ke rebuild.
   spawnSync('npm', ['install-scripts', 'approve', 'ffmpeg-static'], { cwd: root, stdio: 'inherit', shell: true });
   spawnSync('npm', ['rebuild', 'ffmpeg-static'], { cwd: root, stdio: 'inherit', shell: true });
-  if (bundledFfmpegExists()) {
+  if (bundledFfmpegWorks()) {
     console.log('FFmpeg bawaan berhasil dipasang.');
     return true;
   }
-  console.log('FFmpeg bawaan belum bisa dipasang otomatis.');
-  console.log('Pasang FFmpeg sendiri (misalnya: winget install Gyan.FFmpeg), lalu isi FFMPEG_PATH di .env.');
-  return false;
+  console.log('FFmpeg bawaan belum bisa dipasang lewat npm. Mencoba mengunduh ke storage/bin...');
+  try {
+    const r = await downloadFfmpeg(root, { onProgress: progressLine });
+    process.stdout.write('\n');
+    console.log(`FFmpeg berhasil diunduh ke ${r.path}.`);
+    return true;
+  } catch (e) {
+    console.error(e.message);
+    console.error('Pasang FFmpeg sendiri (misalnya: winget install Gyan.FFmpeg atau apt install ffmpeg), lalu isi FFMPEG_PATH di .env.');
+    return false;
+  }
 }
 
 const [maj, min] = process.versions.node.split('.').map(Number);
@@ -60,7 +84,7 @@ if (!fs.existsSync(path.join(root, 'node_modules', 'express'))) {
 }
 
 console.log('\n[2/5] FFmpeg bawaan...');
-ensureFfmpegBinary();
+await ensureFfmpegBinary();
 
 console.log('\n[3/5] Membuat ENC_KEY...');
 run('scripts/gensecret.js', []);
