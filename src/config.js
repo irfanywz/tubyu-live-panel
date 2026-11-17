@@ -1,25 +1,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
 import { downloadedFfmpegPath } from './ffmpeg-dl.js';
 import 'dotenv/config';
-
-const require = createRequire(import.meta.url);
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const storageDir = process.env.STORAGE_DIR || path.join(root, 'storage');
 
-// Urutan: FFMPEG_PATH di .env > hasil unduhan di storage/bin > binary dari ffmpeg-static (npm) > "ffmpeg" di PATH
+// Urutan: FFMPEG_PATH di .env > hasil unduhan di storage/bin > "ffmpeg" di PATH
 function resolveFfmpeg() {
   if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
   const downloaded = downloadedFfmpegPath(root);
   if (fs.existsSync(downloaded)) return downloaded;
-  try {
-    // Binary harus benar-benar ada. Kalau npm memblokir skrip install, file tidak akan ada.
-    const bundled = require('ffmpeg-static');
-    if (bundled && fs.existsSync(bundled)) return bundled;
-  } catch { /* belum npm install */ }
   return 'ffmpeg';
 }
 

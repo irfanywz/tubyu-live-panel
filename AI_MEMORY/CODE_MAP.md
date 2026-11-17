@@ -19,7 +19,7 @@ Hanya file penting dan tanggung jawabnya. Nomor baris sengaja tidak ditulis (cep
 | ffmpeg-errors.js | Terjemahan error FFmpeg | `friendlyError` (aturan regex) |
 | auth.js | Sesi | `requireAuth`, `requireAdmin`, `createSession` |
 | crypto.js | Enkripsi key | `encrypt`, `decrypt`, `hintOf`, `keyFingerprint` |
-| config.js | Konfigurasi | `config`, `PACKAGES` (A/B/C), `resolveFfmpeg` (FFMPEG_PATH > storage/bin > ffmpeg-static > PATH) |
+| config.js | Konfigurasi | `config`, `PACKAGES` (A/B/C), `resolveFfmpeg` (FFMPEG_PATH > storage/bin > PATH) |
 | ffmpeg-dl.js | Unduhan binary FFmpeg ke storage/bin | `downloadFfmpeg`, `downloadedFfmpegPath`, `ffmpegRuns` |
 | db.js | Skema & migrasi | `ensureColumn`, drop `task_logs`, tabel `bandwidth_5m`, `usage_customer_daily`, `audit_logs` |
 | admin.js | CLI admin | `init-admin`, `add`, `add-admin`, `extend`, `reset`, `set-package`, `list` |
@@ -29,7 +29,7 @@ Hanya file penting dan tanggung jawabnya. Nomor baris sengaja tidak ditulis (cep
 | doctor.js | CLI pemeriksaan | — |
 
 ## Script (`scripts/`)
-- `setup.js`: install → FFmpeg bawaan (`npm rebuild ffmpeg-static`, lalu unduh ke `storage/bin` bila gagal) → ENC_KEY → doctor → admin acak.
+- `setup.js`: install → FFmpeg (cek FFMPEG_PATH/storage/bin/PATH, lalu unduh ke `storage/bin` bila belum ada) → ENC_KEY → doctor → admin acak.
 - `getffmpeg.js`: unduh binary FFmpeg ke `storage/bin` (`npm run getffmpeg`), dipakai juga oleh setup.
 - `gensecret.js`: membuat ENC_KEY di `.env` (tidak menimpa yang ada).
 

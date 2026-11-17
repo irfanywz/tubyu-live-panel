@@ -1,5 +1,5 @@
 // npm run getffmpeg: unduh binary FFmpeg ke storage/bin.
-// Dipakai kalau ffmpeg-static gagal terpasang atau tidak bisa dijalankan.
+// Dipakai kalau FFmpeg belum tersedia di sistem dan FFMPEG_PATH tidak diisi.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { downloadFfmpeg, ffmpegRuns, downloadedFfmpegPath } from '../src/ffmpeg-dl.js';

@@ -1,11 +1,10 @@
 // npm run setup: install dependency, buat ENC_KEY, pemeriksaan sistem, dan akun admin acak.
 // Berjalan sama di Windows, Linux, dan macOS.
 import { spawnSync } from 'node:child_process';
-import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { downloadFfmpeg, ffmpegRuns } from '../src/ffmpeg-dl.js';
+import { downloadFfmpeg, ffmpegRuns, downloadedFfmpegPath } from '../src/ffmpeg-dl.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -14,41 +13,17 @@ const progressLine = (size, declared) => {
   const pct = declared ? ` (${Math.round((size / declared) * 100)}%)` : '';
   process.stdout.write(`\r  ${fmtMB(size)}${pct}   `);
 };
-// ffmpeg-static mengunduh binary lewat skrip install, yang bisa diblokir npm.
-// Kalau binary belum ada atau tidak bisa dijalankan, izinkan skripnya lalu jalankan ulang build-nya.
-function bundledFfmpegExists() {
-  try {
-    const bin = createRequire(import.meta.url)('ffmpeg-static');
-    return !!bin && fs.existsSync(bin);
-  } catch {
-    return false;
-  }
-}
-
-// Bukan hanya filenya ada: binary yang rusak (misalnya segfault di sandbox) juga dianggap gagal.
-function bundledFfmpegWorks() {
-  if (!bundledFfmpegExists()) return false;
-  try {
-    return ffmpegRuns(createRequire(import.meta.url)('ffmpeg-static'));
-  } catch {
-    return false;
-  }
-}
-
+// FFmpeg dicari dari: FFMPEG_PATH di .env, hasil unduhan di storage/bin, lalu ffmpeg di PATH.
+// Kalau semuanya tidak ada, unduh ke storage/bin.
 async function ensureFfmpegBinary() {
-  if (bundledFfmpegWorks()) {
-    console.log('FFmpeg bawaan sudah ada dan bisa dijalankan.');
-    return true;
+  const candidates = [process.env.FFMPEG_PATH, downloadedFfmpegPath(root), 'ffmpeg'].filter(Boolean);
+  for (const c of candidates) {
+    if (ffmpegRuns(c)) {
+      console.log(`FFmpeg sudah ada: ${c}`);
+      return true;
+    }
   }
-  console.log('Binary FFmpeg belum terunduh. Mengizinkan skrip ffmpeg-static lalu menjalankan ulang build-nya...');
-  // Perintah approve hanya ada di npm versi tertentu. Kalau tidak dikenali, lanjut ke rebuild.
-  spawnSync('npm', ['install-scripts', 'approve', 'ffmpeg-static'], { cwd: root, stdio: 'inherit', shell: true });
-  spawnSync('npm', ['rebuild', 'ffmpeg-static'], { cwd: root, stdio: 'inherit', shell: true });
-  if (bundledFfmpegWorks()) {
-    console.log('FFmpeg bawaan berhasil dipasang.');
-    return true;
-  }
-  console.log('FFmpeg bawaan belum bisa dipasang lewat npm. Mencoba mengunduh ke storage/bin...');
+  console.log('FFmpeg belum tersedia. Mengunduh ke storage/bin...');
   try {
     const r = await downloadFfmpeg(root, { onProgress: progressLine });
     process.stdout.write('\n');
@@ -56,7 +31,7 @@ async function ensureFfmpegBinary() {
     return true;
   } catch (e) {
     console.error(e.message);
-    console.error('Pasang FFmpeg sendiri (misalnya: winget install Gyan.FFmpeg atau apt install ffmpeg), lalu isi FFMPEG_PATH di .env.');
+    console.error('Alternatif: pasang FFmpeg sendiri (misalnya: winget install Gyan.FFmpeg atau apt install ffmpeg), lalu isi FFMPEG_PATH di .env.');
     return false;
   }
 }

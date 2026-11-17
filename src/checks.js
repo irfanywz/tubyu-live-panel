@@ -28,8 +28,7 @@ function checkFfmpeg() {
   const r = spawnSync(config.ffmpegPath, ['-version'], { encoding: 'utf8', windowsHide: true });
   if (r.error || r.status !== 0) {
     return { ok: false, detail: `tidak bisa dijalankan: ${config.ffmpegPath}`,
-      hint: 'Jalankan: npm run getffmpeg untuk mengunduh FFmpeg bawaan. Kalau tetap gagal, pasang FFmpeg sistem lalu isi FFMPEG_PATH di .env.' };
-  }
+      hint: 'Jalankan: npm run getffmpeg untuk mengunduh FFmpeg bawaan. Kalau tetap gagal, pasang FFmpeg sistem lalu isi FFMPEG_PATH di .env.' };  }
   const first = (r.stdout || '').split('\n')[0] || '';
   const version = first.replace(/^ffmpeg version\s+/, '').split(' ')[0];
   return { ok: true, detail: version || config.ffmpegPath };
@@ -40,7 +39,7 @@ function checkRtmps() {
   const out = `${r.stdout || ''}${r.stderr || ''}`;
   const ok = /\brtmps\b/.test(out);
   return { ok, detail: ok ? 'didukung' : 'tidak ada di build ini',
-    hint: 'Pakai build FFmpeg yang punya TLS, atau pastikan ffmpeg-static terpasang.' };
+    hint: 'Jalankan: npm run getffmpeg untuk mengunduh FFmpeg bawaan, atau pakai build FFmpeg yang punya TLS (FFMPEG_PATH di .env).' };
 }
 
 function checkDb() {

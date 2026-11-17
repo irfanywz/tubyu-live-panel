@@ -23,7 +23,7 @@ Panel fungsional lengkap untuk model rental (customer + admin). Belum diuji end-
 - Timer mulai saat tersambung; label "Menghubungkan...".
 - Penolakan key ganda; peringatan non-systemd.
 - Menu Tentang (versi, tombol donasi/website).
-- Unduhan FFmpeg: `npm run getffmpeg` dan langkah unduh otomatis di setup (belum dijalankan AI; sumber rilis eugeneware/ffmpeg-static, tag b7.0/b6.0/b5.0.1 dicoba berurutan).
+- Unduhan FFmpeg: `npm run getffmpeg` dan langkah unduh otomatis di setup (belum dijalankan AI; paket npm `ffmpeg-static` dihapus, urutan cek: FFMPEG_PATH > storage/bin > PATH).
 - Sambung ulang vs auto-stop: dugaan pemilik (FFmpeg respawn 3x) belum bisa direproduksi dari kode. Celah yang sudah ditutup: reconnect setelah jadwal stop lewat (0.13.0). Jika terjadi lagi, butuh log tugas dengan timestamp.
 
 ## Bug / risiko aktif

@@ -1,7 +1,7 @@
 # AI_HANDOFF (baca ini dulu)
 
 ## Proyek
-**Tubyu Live Panel** (v0.18.0): panel web untuk live streaming YouTube dari file video, model rental dengan masa aktif dan paket A/B/C. Node.js 22.13+, Express, `node:sqlite`, Alpine.js + Tailwind CDN, FFmpeg (`ffmpeg-static` opsional, unduhan otomatis ke `storage/bin` lewat `npm run getffmpeg`, atau `FFMPEG_PATH`).
+**Tubyu Live Panel** (v0.18.0): panel web untuk live streaming YouTube dari file video, model rental dengan masa aktif dan paket A/B/C. Node.js 22.13+, Express, `node:sqlite`, Alpine.js + Tailwind CDN. FFmpeg: diunduh otomatis ke `storage/bin` lewat `npm run getffmpeg`/setup, atau FFmpeg sistem lewat `FFMPEG_PATH`/PATH (paket `ffmpeg-static` sudah dihapus).
 
 ## Status
 Fungsional lengkap untuk customer dan admin. Sebagian besar sudah dilaporkan pemilik berjalan di Windows (install, setup, CLI live). Panel live di Cloud Shell bermasalah karena binary ffmpeg-static (segfault) dan proses sisa; sudah ditangani dengan FFmpeg sistem dan pembersihan proses sisa. Banyak perubahan UI belum dikonfirmasi pemilik (lihat CURRENT_TASK.md).

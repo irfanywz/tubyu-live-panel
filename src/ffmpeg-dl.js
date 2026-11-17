@@ -1,8 +1,9 @@
-// Unduh binary FFmpeg ke storage/bin kalau ffmpeg-static tidak bisa dipasang lewat npm.
-// Sumber: rilis GitHub eugeneware/ffmpeg-static, yang sama dengan yang diunduh npm,
-// tapi berupa satu file binary jadi, jadi tidak perlu ekstrak zip atau tar.
-// Catatan: ini menyelesaikan masalah npm yang memblokir skrip install.
-// Bukan obat untuk sandbox yang membuat binary segfault (misalnya Cloud Shell);
+// Unduh binary FFmpeg ke storage/bin: inilah FFmpeg bawaan panel.
+// Dijalankan otomatis oleh setup kalau tidak ada FFmpeg di FFMPEG_PATH atau PATH,
+// atau manual lewat npm run getffmpeg.
+// Sumber: rilis GitHub eugeneware/ffmpeg-static, satu file binary jadi,
+// jadi tidak perlu ekstrak zip atau tar, dan tidak ada skrip install yang bisa diblokir npm.
+// Catatan: binary ini bisa tetap segfault di sandbox tertentu (misalnya Cloud Shell);
 // di tempat seperti itu pakai FFmpeg sistem (FFMPEG_PATH) atau Docker.
 import fs from 'node:fs';
 import path from 'node:path';

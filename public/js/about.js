@@ -91,6 +91,6 @@ const CHANGELOG_LOG = [
     'Menu Tentang di admin: info aplikasi, riwayat perubahan, tombol donasi dan website.',
   ] },
   { version: '0.18.0', items: [
-    'Pasang jadi lebih mudah: kalau FFmpeg bawaan gagal terpasang, panel bisa mengunduhnya sendiri saat setup, atau lewat perintah khusus.',
+    'Pasang jadi lebih mudah: FFmpeg diunduh sendiri oleh panel saat setup, tanpa paket tambahan dari npm.',
   ] },
 ];

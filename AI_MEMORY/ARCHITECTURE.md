@@ -7,7 +7,7 @@ Satu proses Node.js melayani API, halaman web, dan scheduler. Database berupa SQ
 
 - **Backend:** Node.js 22.13+ dengan Express. Database `node:sqlite` bawaan Node, tanpa native addon.
 - **Frontend:** HTML statis dengan Alpine.js dan Tailwind (CDN). Tidak ada build step.
-- **Live:** FFmpeg dijalankan sebagai child process. Binary dari `ffmpeg-static`, dari hasil unduhan di `storage/bin` (`npm run getffmpeg` atau otomatis saat setup), atau dari `FFMPEG_PATH`.
+- **Live:** FFmpeg dijalankan sebagai child process. Binary dari hasil unduhan di `storage/bin` (`npm run getffmpeg` atau otomatis saat setup), atau FFmpeg sistem lewat `FFMPEG_PATH`/PATH.
 - **Realtime:** Server-Sent Events di `/api/stream`. Satu koneksi per tab.
 - **Peran:** `customer` dan `admin`. Admin mengelola akun, memantau live, dan mengelola berkas.
 
@@ -115,7 +115,7 @@ Lihat `.env.example`. Variabel utama:
 |---|---|
 | `ENC_KEY` | Kunci enkripsi stream key, 64 karakter hex. Dibuat oleh `npm run gensecret`. |
 | `HOST`, `PORT` | Alamat dan port listen. Default `127.0.0.1:3000`. |
-| `FFMPEG_PATH` | Opsional. Kalau kosong, dipakai `storage/bin` (hasil unduhan), lalu `ffmpeg-static`, lalu `ffmpeg` di PATH. |
+| `FFMPEG_PATH` | Opsional. Kalau kosong, dipakai `storage/bin` (hasil unduhan), lalu `ffmpeg` di PATH. |
 | `RTMP_BASE` | Tujuan ingest. Default RTMPS YouTube. |
 | `COOKIE_SECURE` | `true` kalau sudah pakai HTTPS. |
 | `TRUST_PROXY` | `1` kalau di belakang reverse proxy. |

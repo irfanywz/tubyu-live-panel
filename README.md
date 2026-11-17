@@ -10,8 +10,8 @@ Dokumentasi teknis dan riwayat perubahan ada di folder `AI_MEMORY/` (`ARCHITECTU
 - Node.js 22.13 atau lebih baru (disarankan 24 LTS)
 - Koneksi internet, untuk unduhan video dan CDN (Tailwind, Alpine, Iconify)
 
-FFmpeg tidak perlu dipasang manual. Paket `ffmpeg-static` ikut terpasang saat `npm install`.
-Kalau mau memakai FFmpeg sendiri, isi `FFMPEG_PATH` di `.env`.
+FFmpeg tidak perlu dipasang manual. `npm run setup` mengunduh FFmpeg ke `storage/bin`.
+Bisa juga manual: `npm run getffmpeg`. Kalau sudah ada FFmpeg di PATH, atau mau memakai FFmpeg sendiri, isi `FFMPEG_PATH` di `.env`.
 
 ## Instalasi
 
@@ -33,6 +33,7 @@ Setelah login pertama, admin disarankan mengganti sandi di menu Akun & sandi.
 |---|---|
 | `npm start` | Menjalankan panel |
 | `npm run setup` | Instalasi awal lintas platform |
+| `npm run getffmpeg` | Mengunduh FFmpeg ke `storage/bin`, bila belum ada |
 | `npm run doctor` | Cek kesiapan sistem |
 | `npm run gensecret` | Membuat `ENC_KEY` jika belum ada |
 | `npm run admin -- init-admin` | Membuat admin acak, hanya jika belum ada admin |
