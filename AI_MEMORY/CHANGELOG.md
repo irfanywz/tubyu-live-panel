@@ -2,6 +2,12 @@
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [0.19.0]
+
+### Ditambahkan
+- Dukungan Docker: `Dockerfile` (node:24-slim + FFmpeg dari apt Debian), `docker-compose.yml` (volume `data/` dan `storage/`, `HOST=0.0.0.0`, port hanya 127.0.0.1 host), `.dockerignore`, dan panduan `deploy/DOCKER.md`.
+- Latar belakang: binary FFmpeg hasil unduhan (`npm run getffmpeg`) tidak bisa dijalankan di sistem pemilik, sedangkan FFmpeg sistem bisa. FFmpeg dari repositori distro di dalam image menjawab ini tanpa bergantung pada OS host.
+
 ## [0.18.0]
 
 ### Ditambahkan

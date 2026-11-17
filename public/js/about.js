@@ -93,4 +93,7 @@ const CHANGELOG_LOG = [
   { version: '0.18.0', items: [
     'Pasang jadi lebih mudah: FFmpeg diunduh sendiri oleh panel saat setup, tanpa paket tambahan dari npm.',
   ] },
+  { version: '0.19.0', items: [
+    'Bisa dijalankan dengan Docker: satu perintah untuk menjalankan panel di server atau layanan cloud, FFmpeg sudah termasuk di dalamnya.',
+  ] },
 ];

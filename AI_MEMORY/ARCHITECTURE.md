@@ -7,7 +7,7 @@ Satu proses Node.js melayani API, halaman web, dan scheduler. Database berupa SQ
 
 - **Backend:** Node.js 22.13+ dengan Express. Database `node:sqlite` bawaan Node, tanpa native addon.
 - **Frontend:** HTML statis dengan Alpine.js dan Tailwind (CDN). Tidak ada build step.
-- **Live:** FFmpeg dijalankan sebagai child process. Binary dari hasil unduhan di `storage/bin` (`npm run getffmpeg` atau otomatis saat setup), atau FFmpeg sistem lewat `FFMPEG_PATH`/PATH.
+- **Live:** FFmpeg dijalankan sebagai child process. Binary dari hasil unduhan di `storage/bin` (`npm run getffmpeg` atau otomatis saat setup), atau FFmpeg sistem lewat `FFMPEG_PATH`/PATH. Di Docker, FFmpeg dari apt Debian (PATH).
 - **Realtime:** Server-Sent Events di `/api/stream`. Satu koneksi per tab.
 - **Peran:** `customer` dan `admin`. Admin mengelola akun, memantau live, dan mengelola berkas.
 

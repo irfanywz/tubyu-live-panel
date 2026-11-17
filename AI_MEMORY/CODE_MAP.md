@@ -33,6 +33,12 @@ Hanya file penting dan tanggung jawabnya. Nomor baris sengaja tidak ditulis (cep
 - `getffmpeg.js`: unduh binary FFmpeg ke `storage/bin` (`npm run getffmpeg`), dipakai juga oleh setup.
 - `gensecret.js`: membuat ENC_KEY di `.env` (tidak menimpa yang ada).
 
+## Docker
+- `Dockerfile`: node:24-slim + FFmpeg dari apt, copy `src`, `scripts`, `public`, `HOST=0.0.0.0`.
+- `docker-compose.yml`: port 127.0.0.1:3000 host, volume `data/` dan `storage/`, `env_file: .env`.
+- `.dockerignore`: kode, data, rahasia tidak ikut ke image.
+- `deploy/DOCKER.md`: panduan Docker (ENC_KEY via openssl, admin via `docker compose run`, HTTPS PaaS/Caddy).
+
 ## Frontend (`public/`)
 | File | Isi |
 |---|---|

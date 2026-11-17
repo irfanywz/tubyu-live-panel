@@ -1,0 +1,15 @@
+# Tidak dikirim ke image: berjalan di host, atau tidak diperlukan di dalam container.
+node_modules
+data
+storage
+backups
+.git
+.gitignore
+.env
+.env.example
+*.db
+AI_MEMORY
+deploy
+tests
+README.md
+.github.bat

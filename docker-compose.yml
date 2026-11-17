@@ -1,0 +1,24 @@
+# Cara pakai singkat: lihat deploy/DOCKER.md
+services:
+  panel:
+    build: .
+    container_name: tubyu-live-panel
+    restart: unless-stopped
+
+    # Panel hanya di 127.0.0.1 host. Akses publik lewat Caddy/nginx di host
+    # (HTTPS), atau langsung dari PaaS yang sudah menyediakan HTTPS.
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    # Data dan berkas video bertahan di host, tidak hilang saat container diganti.
+    volumes:
+      - ./data:/app/data
+      - ./storage:/app/storage
+
+    # .env di host dijadikan variabel lingkungan (PORT, ENC_KEY, COOKIE_SECURE, dst).
+    env_file:
+      - .env
+
+    # Di dalam container panel harus mendengarkan 0.0.0.0.
+    environment:
+      - HOST=0.0.0.0

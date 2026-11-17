@@ -21,6 +21,8 @@ npm run setup
 npm start
 ```
 
+Cara lain: jalankan dengan Docker (FFmpeg sudah termasuk) — lihat `deploy/DOCKER.md`.
+
 - `npm run setup` membuat `ENC_KEY`, menjalankan pemeriksaan sistem, dan membuat akun admin acak.
   Catat username dan password admin yang tampil. Password hanya ditampilkan sekali.
 - Buka http://127.0.0.1:3000 untuk panel customer, dan http://127.0.0.1:3000/admin.html untuk admin.
