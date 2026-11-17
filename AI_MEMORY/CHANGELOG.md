@@ -6,7 +6,9 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Ditambahkan
 - Dukungan Docker: `Dockerfile` (node:24-slim + FFmpeg dari apt Debian), `docker-compose.yml` (volume `data/` dan `storage/`, `HOST=0.0.0.0`, port hanya 127.0.0.1 host), `.dockerignore`, dan panduan `deploy/DOCKER.md`.
+- Panduan deploy ke Altare App Hosting (`deploy/ALTARE.md`): install `npm install`, build `npm run getffmpeg`, start `npm start`, variable `HOST=0.0.0.0`, admin dan doctor lewat command job.
 - Latar belakang: binary FFmpeg hasil unduhan (`npm run getffmpeg`) tidak bisa dijalankan di sistem pemilik, sedangkan FFmpeg sistem bisa. FFmpeg dari repositori distro di dalam image menjawab ini tanpa bergantung pada OS host.
+- `npm run getffmpeg` sekarang melewati unduhan bila FFmpeg sudah ada di `FFMPEG_PATH` atau PATH sistem.
 
 ## [0.18.0]
 

@@ -38,6 +38,7 @@ Hanya file penting dan tanggung jawabnya. Nomor baris sengaja tidak ditulis (cep
 - `docker-compose.yml`: port 127.0.0.1:3000 host, volume `data/` dan `storage/`, `env_file: .env`.
 - `.dockerignore`: kode, data, rahasia tidak ikut ke image.
 - `deploy/DOCKER.md`: panduan Docker (ENC_KEY via openssl, admin via `docker compose run`, HTTPS PaaS/Caddy).
+- `deploy/ALTARE.md`: panduan deploy ke Altare App Hosting (tanpa Docker).
 
 ## Frontend (`public/`)
 | File | Isi |

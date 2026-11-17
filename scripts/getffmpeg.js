@@ -9,6 +9,13 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const fmtMB = (b) => `${(b / 1024 / 1024).toFixed(1)} MB`;
 
 async function main() {
+  // Kalau FFmpeg sistem sudah ada, unduhan tidak diperlukan.
+  for (const c of [process.env.FFMPEG_PATH, 'ffmpeg'].filter(Boolean)) {
+    if (ffmpegRuns(c)) {
+      console.log(`FFmpeg sudah ada di sistem: ${c}. Unduhan dilewati.`);
+      return;
+    }
+  }
   const dest = downloadedFfmpegPath(root);
   if (ffmpegRuns(dest)) {
     console.log('FFmpeg hasil unduhan sudah ada dan bisa dijalankan, dilewati.');

@@ -26,6 +26,7 @@ Panel fungsional lengkap untuk model rental (customer + admin). Belum diuji end-
 - Menu Tentang (versi, tombol donasi/website).
 - Unduhan FFmpeg: `npm run getffmpeg` dan langkah unduh otomatis di setup (belum dijalankan AI; paket npm `ffmpeg-static` dihapus, urutan cek: FFMPEG_PATH > storage/bin > PATH).
 - Docker: `docker compose up -d --build`, `init-admin` di dalam container, HTTPS PaaS/Caddy (panduan `deploy/DOCKER.md`, belum dijalankan AI).
+- Altare App Hosting: build `npm run getffmpeg`, command job `init-admin` dan `doctor`, variable `HOST=0.0.0.0` (panduan `deploy/ALTARE.md`, belum dijalankan AI; keberlangsungan data antar deploy belum diketahui).
 - Sambung ulang vs auto-stop: dugaan pemilik (FFmpeg respawn 3x) belum bisa direproduksi dari kode. Celah yang sudah ditutup: reconnect setelah jadwal stop lewat (0.13.0). Jika terjadi lagi, butuh log tugas dengan timestamp.
 
 ## Bug / risiko aktif
